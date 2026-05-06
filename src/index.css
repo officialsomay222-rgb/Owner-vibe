@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+body {
+  background-color: #000000;
+  -webkit-font-smoothing: antialiased;
+}
