@@ -7,7 +7,7 @@ async function getYouTubeInstance() {
     ytInstance = await Innertube.create({
       cache: new UniversalCache(false),
       generate_session_locally: true,
-      clientType: "WEB" // use web client for initialization
+      clientType: "TV" // use TV client for initialization
     });
   }
   return ytInstance;
@@ -58,17 +58,63 @@ export default async function handler(req, res) {
     res.end();
 
   } catch (error) {
-    console.error('Stream error:', error);
+    console.error('youtubei.js stream error:', error.message);
 
-    // Check if headers have been sent before trying to send JSON error
-    if (!res.headersSent) {
-        if (error.message && error.message.includes('age-restricted')) {
-            return res.status(403).json({ error: 'Video is age-restricted and cannot be streamed' });
+    // Fallback Proxy logic
+    try {
+      console.log(`Falling back to Piped API for video: ${id}`);
+      const pipedApiUrl = `https://pipedapi.kavin.rocks/streams/${id}`;
+      const pipedResponse = await fetch(pipedApiUrl);
+
+      if (!pipedResponse.ok) {
+        throw new Error(`Piped API failed with status ${pipedResponse.status}`);
+      }
+
+      const pipedData = await pipedResponse.json();
+
+      if (!pipedData.audioStreams || pipedData.audioStreams.length === 0) {
+        throw new Error('No audio streams found from Piped API');
+      }
+
+      // Get the highest bitrate audio stream
+      const bestAudioStream = pipedData.audioStreams.sort((a, b) => b.bitrate - a.bitrate)[0];
+
+      const audioResponse = await fetch(bestAudioStream.url);
+
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to fetch audio from Piped URL: ${audioResponse.status}`);
+      }
+
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', audioResponse.headers.get('content-type') || 'audio/mp4');
+        res.setHeader('Transfer-Encoding', 'chunked');
+      }
+
+      // Pipe the fetched audio stream to the client
+      if (audioResponse.body) {
+        // Handle web stream response from fetch
+        for await (const chunk of audioResponse.body) {
+          res.write(chunk);
         }
-        return res.status(500).json({ error: 'Failed to fetch audio stream' });
-    } else {
-        // Just end the response if headers were already sent
         res.end();
+      } else {
+        // Fallback if body is not async iterable (e.g. node-fetch without stream)
+        const buffer = await audioResponse.arrayBuffer();
+        res.end(Buffer.from(buffer));
+      }
+    } catch (fallbackError) {
+      console.error('Fallback proxy error:', fallbackError.message);
+
+      // Check if headers have been sent before trying to send JSON error
+      if (!res.headersSent) {
+          if (error.message && error.message.includes('age-restricted')) {
+              return res.status(403).json({ error: 'Video is age-restricted and cannot be streamed' });
+          }
+          return res.status(500).json({ error: 'Failed to fetch audio stream' });
+      } else {
+          // Just end the response if headers were already sent
+          res.end();
+      }
     }
   }
 }
