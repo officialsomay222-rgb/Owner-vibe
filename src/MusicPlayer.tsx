@@ -32,12 +32,13 @@ export const MusicPlayer = () => {
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-          className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center overflow-hidden"
+          className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center overflow-hidden will-change-transform"
+          style={{ willChange: 'transform' }}
         >
           {/* Blurred Background */}
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-40 blur-[50px] scale-150 transition-all duration-1000"
-            style={{ backgroundImage: `url(${currentSong.thumbnailUrl})` }}
+            className="absolute inset-0 bg-cover bg-center opacity-40 blur-xl scale-150 transition-all duration-1000 will-change-transform"
+            style={{ backgroundImage: `url(${currentSong.thumbnailUrl})`, willChange: 'transform, filter' }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black" />
 
