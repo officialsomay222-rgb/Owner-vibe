@@ -142,47 +142,124 @@ const HomeTab = () => (
     </div>
 );
 
-const SearchTab = () => (
-    <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
-        <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-8 tracking-tight pl-1">Search</h2>
-        <div className="relative mb-8 group">
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                <Search className="w-5 h-5 text-[#888] group-focus-within:text-[#00d2ff] light:text-gray-500 light:group-focus-within:text-blue-500 transition-colors duration-300" />
-            </div>
-            <input 
-                type="text" 
-                placeholder="Songs, Playlist, Album or Artist" 
-                className="w-full bg-white/[0.02] light:bg-black/[0.02] border-2 border-white/[0.05] light:border-black/5 rounded-[20px] outline-none text-white light:text-gray-900 py-4 pl-[52px] pr-4 text-[16px] placeholder-[#666] light:placeholder-gray-400 focus:border-[#00d2ff]/50 light:focus:border-blue-500/50 focus:bg-white/[0.04] light:focus:bg-black/[0.04] shadow-inner light:shadow-sm focus:shadow-[0_0_20px_rgba(0,210,255,0.1)] light:focus:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all duration-300 font-medium tracking-wide"
-                autoFocus
-            />
-            <div className="absolute inset-y-0 right-4 flex items-center">
-                <div className="bg-white/[0.05] light:bg-black/[0.05] p-1.5 rounded-lg border border-white/[0.05] light:border-black/[0.05]">
-                    <ListFilter className="w-4 h-4 text-[#888] light:text-gray-500" />
-                </div>
-            </div>
-        </div>
-        
-        <div className="flex items-center justify-between mb-4 pl-1">
-            <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
-            <button className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
-        </div>
+const SearchTab = () => {
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
 
-        <div className="flex flex-col space-y-1">
-            {searchHistory.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3.5 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] active:bg-white/[0.05] light:active:bg-black/[0.05] group cursor-pointer transition-all duration-300">
-                    <div className="flex items-center space-x-4">
-                        <History className="w-[18px] h-[18px] text-[#555] light:text-gray-400 group-hover:text-white light:group-hover:text-black transition-colors" />
-                        <span className="text-[16px] text-[#ccc] light:text-gray-700 font-medium tracking-wide group-hover:text-white light:group-hover:text-black transition-colors">{item}</span>
-                    </div>
-                    <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <X className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" />
-                        <ArrowUpLeft className="w-[22px] h-[22px] text-[#555] light:text-gray-400 hover:text-[#00d2ff] light:hover:text-blue-500 transition-colors cursor-pointer" />
+    const handleSearch = async (overrideQuery?: string) => {
+        const q = overrideQuery || query;
+        if (!q.trim()) return;
+        setIsSearching(true);
+        setHasSearched(true);
+        try {
+            const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setResults(data);
+            } else {
+                console.error("Search failed");
+                setResults([]);
+            }
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+            setResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    return (
+        <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
+            <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-8 tracking-tight pl-1">Search</h2>
+            <div className="relative mb-8 group">
+                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                    <Search className="w-5 h-5 text-[#888] group-focus-within:text-[#00d2ff] light:text-gray-500 light:group-focus-within:text-blue-500 transition-colors duration-300" />
+                </div>
+                <input
+                    type="text"
+                    placeholder="Songs, Playlist, Album or Artist"
+                    className="w-full bg-white/[0.02] light:bg-black/[0.02] border-2 border-white/[0.05] light:border-black/5 rounded-[20px] outline-none text-white light:text-gray-900 py-4 pl-[52px] pr-4 text-[16px] placeholder-[#666] light:placeholder-gray-400 focus:border-[#00d2ff]/50 light:focus:border-blue-500/50 focus:bg-white/[0.04] light:focus:bg-black/[0.04] shadow-inner light:shadow-sm focus:shadow-[0_0_20px_rgba(0,210,255,0.1)] light:focus:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all duration-300 font-medium tracking-wide"
+                    autoFocus
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                />
+                <div className="absolute inset-y-0 right-4 flex items-center">
+                    <div className="bg-white/[0.05] light:bg-black/[0.05] p-1.5 rounded-lg border border-white/[0.05] light:border-black/[0.05]">
+                        <ListFilter className="w-4 h-4 text-[#888] light:text-gray-500" />
                     </div>
                 </div>
-            ))}
+            </div>
+
+            {!hasSearched ? (
+                <>
+                    <div className="flex items-center justify-between mb-4 pl-1">
+                        <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
+                        <button className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                        {searchHistory.map((item, i) => (
+                            <div key={i} className="flex items-center justify-between p-3.5 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] active:bg-white/[0.05] light:active:bg-black/[0.05] group cursor-pointer transition-all duration-300" onClick={() => { setQuery(item); handleSearch(item); }}>
+                                <div className="flex items-center space-x-4">
+                                    <History className="w-[18px] h-[18px] text-[#555] light:text-gray-400 group-hover:text-white light:group-hover:text-black transition-colors" />
+                                    <span className="text-[16px] text-[#ccc] light:text-gray-700 font-medium tracking-wide group-hover:text-white light:group-hover:text-black transition-colors">{item}</span>
+                                </div>
+                                <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <X className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" />
+                                    <ArrowUpLeft className="w-[22px] h-[22px] text-[#555] light:text-gray-400 hover:text-[#00d2ff] light:hover:text-blue-500 transition-colors cursor-pointer" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <div className="flex flex-col">
+                    {isSearching ? (
+                        <div className="flex items-center justify-center py-10">
+                            <div className="w-8 h-8 border-4 border-[#00d2ff] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col space-y-4">
+                            {results.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="relative w-14 h-14 rounded-md overflow-hidden shrink-0">
+                                            <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                                <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col max-w-[200px]">
+                                            <span className="text-white/95 light:text-gray-900 text-[16px] font-bold tracking-wide leading-tight line-clamp-1 mb-1">{item.title}</span>
+                                            <span className="text-[#888] light:text-gray-500 text-[13px] font-medium tracking-wide line-clamp-1">{item.artist}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-[#888] light:text-gray-500 text-[13px] font-medium shrink-0">
+                                        {item.duration}
+                                    </div>
+                                </div>
+                            ))}
+                            {results.length === 0 && !isSearching && (
+                                <div className="text-center text-[#888] py-10">
+                                    No results found
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 const LibraryTab = () => (
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
