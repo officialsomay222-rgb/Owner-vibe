@@ -14,6 +14,7 @@ import {
 import { useMusic } from './MusicContext';
 import { MusicPlayer } from './MusicPlayer';
 import { MiniPlayer } from './MiniPlayer';
+import { motion } from 'framer-motion';
 
 // Mock Data
 // We need real video IDs for streaming to work. Let's map mock data to some real NCS video ids to make them work if clicked.
@@ -328,10 +329,21 @@ const LibraryTab = () => (
                <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Favorites</span>
            </div>
            <div className="flex flex-col cursor-pointer group">
-               <div className="w-full aspect-square bg-gradient-to-br from-blue-500/10 to-blue-500/5 light:from-blue-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-blue-500/20 light:border-blue-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-blue-500/40 light:group-hover:border-blue-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <Plane className="w-[42px] h-[42px] text-blue-500 light:text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
-               </div>
+               <motion.div
+                   className="w-full aspect-square bg-transparent flex items-center justify-center mb-3.5 group-active:scale-[0.97] transition-all duration-300 relative"
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+               >
+                   <div className="rgb-border-wrapper w-full h-full max-w-[80px] max-h-[80px]">
+                       <div className="rgb-content w-full h-full">
+                           <img
+                               src="/assets/profile-image.jpg"
+                               alt="Profile"
+                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                           />
+                       </div>
+                   </div>
+               </motion.div>
                <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Cached/Offline</span>
            </div>
            <div className="flex flex-col cursor-pointer group">
