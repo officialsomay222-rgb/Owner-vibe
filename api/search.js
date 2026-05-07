@@ -8,6 +8,7 @@ async function getYouTubeInstance() {
     ytInstance = await Innertube.create({
       cache: new UniversalCache(false),
       generate_session_locally: true,
+      clientType: 'TV', // Use TV client to bypass login checks
     });
   }
   return ytInstance;
