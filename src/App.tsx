@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { 
     Home, Search, Library, Settings, MoreVertical, 
     Share2, CircleHelp, History, ArrowUpLeft, 
@@ -31,18 +32,62 @@ const scarionixAlbums = [
   { id: 3, img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=200' },
 ];
 
-const searchHistory = [
-    "South movie",
-    "Pk movie",
-    "dil pe zakham khate hain",
-    "Indila",
-    "sem tempo",
-    "Ari ari punk",
-    "Ari ari",
-    "Aah aah porn",
-    "montagem perigosa",
-    "Iun na praca"
-];
+// Helper to get search history from local storage
+const getSearchHistory = (): string[] => {
+  try {
+    const history = localStorage.getItem('ownerVibe_searchHistory');
+    return history ? JSON.parse(history) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+// Helper to save search history to local storage
+const saveSearchHistory = (query: string) => {
+  try {
+    let history = getSearchHistory();
+    // Remove if already exists to move to top
+    history = history.filter(h => h.toLowerCase() !== query.toLowerCase());
+    history.unshift(query);
+    // Keep only last 10
+    history = history.slice(0, 10);
+    localStorage.setItem('ownerVibe_searchHistory', JSON.stringify(history));
+    return history;
+  } catch (e) {
+    return [];
+  }
+};
+
+// Helper to clear search history
+const clearSearchHistory = () => {
+  try {
+    localStorage.removeItem('ownerVibe_searchHistory');
+  } catch (e) {}
+};
+
+// Helper to get recent songs
+const getRecentSongs = (): any[] => {
+    try {
+        const songs = localStorage.getItem('ownerVibe_recentSongs');
+        return songs ? JSON.parse(songs) : [];
+    } catch (e) {
+        return [];
+    }
+};
+
+// Helper to save recent song
+const saveRecentSong = (song: any) => {
+    try {
+        let songs = getRecentSongs();
+        // Remove if already exists to move to top based on title/artist
+        songs = songs.filter(s => s.videoId !== song.videoId);
+        songs.unshift(song);
+        // Keep only last 10
+        songs = songs.slice(0, 10);
+        localStorage.setItem('ownerVibe_recentSongs', JSON.stringify(songs));
+    } catch (e) {}
+};
+
 
 const Header = ({ isVisible }: { isVisible: boolean }) => (
   <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 bg-black/60 backdrop-blur-[40px] transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -76,81 +121,197 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
   </header>
 );
 
-const HomeTab = () => (
-    <div className="flex flex-col pt-[84px] pb-32 px-5 space-y-12 animate-in fade-in duration-500">
-        <section>
-            <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Discover</h2>
-            <div className="flex flex-col space-y-3">
-                {discoverSongs.map((song) => (
-                    <div key={song.id} className="flex items-center justify-between p-3 rounded-[20px] bg-white/[0.01] light:bg-black/[0.01] border border-white/[0.03] hover:border-white/[0.08] light:border-black/[0.03] light:hover:border-black/[0.08] hover:bg-white/[0.04] light:hover:bg-black/[0.03] group cursor-pointer active:scale-[0.98] transition-all duration-300 ease-out shadow-[0_4px_20px_rgba(0,0,0,0.2)] light:shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-                        <div className="flex items-center space-x-4">
-                            <div className="relative overflow-hidden rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm border border-white/[0.04] light:border-black/[0.04]">
-                                <img src={song.img} alt={song.title} className="w-[60px] h-[60px] object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                    <Play className="w-6 h-6 text-white fill-white ml-0.5 drop-shadow-md" />
+const HomeTab = () => {
+    const [recentSongs, setRecentSongs] = useState<any[]>([]);
+    const [trending, setTrending] = useState<any[]>([]);
+    const [curated, setCurated] = useState<any[]>([]);
+    const [isLoadingTrending, setIsLoadingTrending] = useState(true);
+    const [isLoadingCurated, setIsLoadingCurated] = useState(true);
+
+    useEffect(() => {
+        // Load recent songs
+        const songs = getRecentSongs();
+        setRecentSongs(songs);
+
+        // Fetch trending
+        const fetchTrending = async () => {
+            try {
+                const res = await fetch('/api/trending');
+                if (res.ok) {
+                    const data = await res.json();
+                    setTrending(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch trending", err);
+            } finally {
+                setIsLoadingTrending(false);
+            }
+        };
+
+        // Fetch curated based on recent activity, or fallback
+        const fetchCurated = async () => {
+            try {
+                const history = getSearchHistory();
+                const searchQuery = history.length > 0 ? `${history[0]} related music` : 'Popular relaxing music playlist';
+                const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setCurated(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch curated", err);
+            } finally {
+                setIsLoadingCurated(false);
+            }
+        };
+
+        fetchTrending();
+        fetchCurated();
+    }, []);
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 15
+            }
+        }
+    };
+
+    return (
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="flex flex-col pt-[84px] pb-32 px-5 space-y-12"
+        >
+            {/* Jump Back In */}
+            {recentSongs.length > 0 && (
+                <motion.section variants={itemVariants}>
+                    <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Jump Back In</h2>
+                    <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-5 px-5 snap-x">
+                        {recentSongs.map((song, i) => (
+                            <div key={i} className="flex-none w-[140px] snap-start cursor-pointer group active:scale-95 transition-all duration-300">
+                                <div className="relative mb-3 rounded-[20px] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm border border-white/[0.04] light:border-black/[0.04] aspect-square">
+                                    <img src={song.thumbnailUrl} alt={song.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <Play className="w-8 h-8 text-white fill-white ml-0.5 drop-shadow-md" />
+                                    </div>
                                 </div>
+                                <h3 className="text-white/95 light:text-gray-900 transition-colors text-[14px] font-bold tracking-wide line-clamp-1 px-1">{song.title}</h3>
+                                <p className="text-[#888] light:text-gray-500 transition-colors text-[12px] font-medium tracking-wide line-clamp-1 px-1 mt-0.5">{song.artist}</p>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-white/95 light:text-gray-900 transition-colors text-[16px] font-bold tracking-wide leading-tight line-clamp-1 mb-1">{song.title}</span>
-                                <span className="text-[#888] light:text-gray-500 transition-colors text-[13px] font-medium tracking-wide line-clamp-1 group-hover:text-[#aaa] light:group-hover:text-gray-700">{song.artist}</span>
-                            </div>
-                        </div>
-                        <button className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90">
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
+                        ))}
                     </div>
-                ))}
-            </div>
-        </section>
+                </motion.section>
+            )}
 
-        <section>
-            <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Recommended playlists</h2>
-            <div className="flex overflow-x-auto space-x-5 no-scrollbar pb-6 -mx-5 px-5 snap-x">
-                {recommendedPlaylists.map(playlist => (
-                     <div key={playlist.id} className="flex-none p-3.5 rounded-[24px] bg-gradient-to-b from-white/[0.04] to-white/[0.01] light:from-white light:to-gray-50 border border-white/[0.06] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 w-[170px] snap-start cursor-pointer hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] light:hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] group">
-                         <div className="relative mb-4 rounded-[16px] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.6)] light:shadow-sm">
-                            <img src={playlist.img} alt={playlist.title} className="w-full aspect-square object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2 justify-end">
-                                <div className="w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-lg translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-100">
-                                    <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                                </div>
-                            </div>
-                         </div>
-                         <h3 className="text-white/95 light:text-gray-900 transition-colors font-bold text-[15px] line-clamp-2 leading-snug tracking-wide px-1">{playlist.title}</h3>
-                         <p className="text-[#777] light:text-gray-500 transition-colors font-medium text-[12px] mt-1.5 truncate px-1">{playlist.subtitle}</p>
-                     </div>
-                ))}
-            </div>
-        </section>
+            {/* Trending Now */}
+            <motion.section variants={itemVariants}>
+                <div className="flex items-center justify-between mb-6 pl-1">
+                    <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors tracking-tight">Trending Now</h2>
+                    <span className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 uppercase tracking-wider cursor-pointer hover:text-white light:hover:text-blue-700 transition-colors">See All</span>
+                </div>
 
-        <section>
-            <h2 className="text-[17px] font-bold text-white/70 light:text-gray-500 transition-colors uppercase mb-5 tracking-[0.2em] pl-1">SCARIONIX</h2>
-            <div className="flex overflow-x-auto space-x-6 no-scrollbar pb-4 -mx-5 px-5 snap-x">
-                {scarionixAlbums.map(album => (
-                    <div key={album.id} className="relative flex-none w-[150px] aspect-square rounded-[24px] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.6)] light:shadow-md snap-start cursor-pointer active:scale-95 hover:shadow-[0_16px_40px_rgba(255,255,255,0.06)] light:hover:shadow-lg border-2 border-white/[0.04] light:border-black/5 hover:border-white/[0.15] light:hover:border-black/15 transition-all duration-300 group">
-                        <img src={album.img} alt="Album" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 light:from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                             <div className="w-full flex justify-between items-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                <span className="text-white text-xs font-bold tracking-wider">PLAY</span>
-                                <Play className="w-4 h-4 text-white fill-white" />
+                {isLoadingTrending ? (
+                    <div className="flex overflow-x-auto space-x-5 no-scrollbar pb-6 -mx-5 px-5">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="flex-none w-[180px] h-[220px] rounded-[24px] bg-white/[0.02] light:bg-black/[0.02] animate-pulse border border-white/[0.05] light:border-black/[0.05]"></div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex overflow-x-auto space-x-5 no-scrollbar pb-6 -mx-5 px-5 snap-x">
+                        {trending.map((song, i) => (
+                             <div key={i} onClick={() => saveRecentSong(song)} className="flex-none p-3.5 rounded-[24px] bg-gradient-to-b from-white/[0.04] to-white/[0.01] light:from-white light:to-gray-50 border border-white/[0.06] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 w-[180px] snap-start cursor-pointer hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] light:hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] group">
+                                 <div className="relative mb-4 rounded-[16px] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.6)] light:shadow-sm aspect-video">
+                                    <img src={song.thumbnailUrl} alt={song.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2 justify-end">
+                                        <div className="w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-lg translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-100">
+                                            <Play className="w-5 h-5 text-black fill-black ml-0.5" />
+                                        </div>
+                                    </div>
+                                 </div>
+                                 <h3 className="text-white/95 light:text-gray-900 transition-colors font-bold text-[15px] line-clamp-2 leading-snug tracking-wide px-1">{song.title}</h3>
+                                 <p className="text-[#777] light:text-gray-500 transition-colors font-medium text-[12px] mt-1.5 truncate px-1">{song.artist}</p>
                              </div>
-                        </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-        </section>
-    </div>
-);
+                )}
+            </motion.section>
+
+            {/* Curated For You */}
+            <motion.section variants={itemVariants}>
+                <div className="flex items-center space-x-2 mb-6 pl-1">
+                    <div className="w-1.5 h-6 bg-[#00d2ff] rounded-full shadow-[0_0_10px_rgba(0,210,255,0.6)]"></div>
+                    <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors tracking-tight">Curated For You</h2>
+                </div>
+
+                {isLoadingCurated ? (
+                    <div className="flex flex-col space-y-3">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="w-full h-[86px] rounded-[20px] bg-white/[0.02] light:bg-black/[0.02] animate-pulse border border-white/[0.05] light:border-black/[0.05]"></div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col space-y-3">
+                        {curated.map((song, i) => (
+                            <div key={i} onClick={() => saveRecentSong(song)} className="flex items-center justify-between p-3 rounded-[20px] bg-white/[0.01] light:bg-black/[0.01] border border-white/[0.03] hover:border-white/[0.08] light:border-black/[0.03] light:hover:border-black/[0.08] hover:bg-white/[0.04] light:hover:bg-black/[0.03] group cursor-pointer active:scale-[0.98] transition-all duration-300 ease-out shadow-[0_4px_20px_rgba(0,0,0,0.2)] light:shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                                <div className="flex items-center space-x-4">
+                                    <div className="relative overflow-hidden rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm border border-white/[0.04] light:border-black/[0.04]">
+                                        <img src={song.thumbnailUrl} alt={song.title} className="w-[60px] h-[60px] object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <Play className="w-6 h-6 text-white fill-white ml-0.5 drop-shadow-md" />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col max-w-[200px]">
+                                        <span className="text-white/95 light:text-gray-900 transition-colors text-[16px] font-bold tracking-wide leading-tight line-clamp-1 mb-1">{song.title}</span>
+                                        <span className="text-[#888] light:text-gray-500 transition-colors text-[13px] font-medium tracking-wide line-clamp-1 group-hover:text-[#aaa] light:group-hover:text-gray-700">{song.artist}</span>
+                                    </div>
+                                </div>
+                                <button className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90">
+                                    <MoreVertical className="w-5 h-5" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </motion.section>
+        </motion.div>
+    );
+};
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [localHistory, setLocalHistory] = useState<string[]>([]);
+
+    useEffect(() => {
+        setLocalHistory(getSearchHistory());
+    }, []);
 
     const handleSearch = async (overrideQuery?: string) => {
         const q = overrideQuery || query;
         if (!q.trim()) return;
+
+        const newHistory = saveSearchHistory(q);
+        setLocalHistory(newHistory);
+
         setIsSearching(true);
         setHasSearched(true);
         try {
@@ -168,6 +329,11 @@ const SearchTab = () => {
         } finally {
             setIsSearching(false);
         }
+    };
+
+    const handleClearHistory = () => {
+        clearSearchHistory();
+        setLocalHistory([]);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -201,25 +367,29 @@ const SearchTab = () => {
 
             {!hasSearched ? (
                 <>
-                    <div className="flex items-center justify-between mb-4 pl-1">
-                        <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
-                        <button className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
-                    </div>
-
-                    <div className="flex flex-col space-y-1">
-                        {searchHistory.map((item, i) => (
-                            <div key={i} className="flex items-center justify-between p-3.5 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] active:bg-white/[0.05] light:active:bg-black/[0.05] group cursor-pointer transition-all duration-300" onClick={() => { setQuery(item); handleSearch(item); }}>
-                                <div className="flex items-center space-x-4">
-                                    <History className="w-[18px] h-[18px] text-[#555] light:text-gray-400 group-hover:text-white light:group-hover:text-black transition-colors" />
-                                    <span className="text-[16px] text-[#ccc] light:text-gray-700 font-medium tracking-wide group-hover:text-white light:group-hover:text-black transition-colors">{item}</span>
-                                </div>
-                                <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <X className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" />
-                                    <ArrowUpLeft className="w-[22px] h-[22px] text-[#555] light:text-gray-400 hover:text-[#00d2ff] light:hover:text-blue-500 transition-colors cursor-pointer" />
-                                </div>
+                    {localHistory.length > 0 && (
+                        <>
+                            <div className="flex items-center justify-between mb-4 pl-1">
+                                <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
+                                <button onClick={handleClearHistory} className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
                             </div>
-                        ))}
-                    </div>
+
+                            <div className="flex flex-col space-y-1">
+                                {localHistory.map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3.5 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] active:bg-white/[0.05] light:active:bg-black/[0.05] group cursor-pointer transition-all duration-300" onClick={() => { setQuery(item); handleSearch(item); }}>
+                                        <div className="flex items-center space-x-4">
+                                            <History className="w-[18px] h-[18px] text-[#555] light:text-gray-400 group-hover:text-white light:group-hover:text-black transition-colors" />
+                                            <span className="text-[16px] text-[#ccc] light:text-gray-700 font-medium tracking-wide group-hover:text-white light:group-hover:text-black transition-colors">{item}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <X className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); const newH = localHistory.filter(h => h !== item); setLocalHistory(newH); localStorage.setItem('ownerVibe_searchHistory', JSON.stringify(newH)); }} />
+                                            <ArrowUpLeft className="w-[22px] h-[22px] text-[#555] light:text-gray-400 hover:text-[#00d2ff] light:hover:text-blue-500 transition-colors cursor-pointer" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </>
             ) : (
                 <div className="flex flex-col">
@@ -230,7 +400,7 @@ const SearchTab = () => {
                     ) : (
                         <div className="flex flex-col space-y-4">
                             {results.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300">
+                                <div key={i} onClick={() => saveRecentSong(item)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300">
                                     <div className="flex items-center space-x-4">
                                         <div className="relative w-14 h-14 rounded-md overflow-hidden shrink-0">
                                             <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
