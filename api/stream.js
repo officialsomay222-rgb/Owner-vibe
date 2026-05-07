@@ -1,18 +1,3 @@
-import { Innertube, UniversalCache } from 'youtubei.js';
-
-let ytInstance = null;
-
-async function getYouTubeInstance() {
-  if (!ytInstance) {
-    ytInstance = await Innertube.create({
-      cache: new UniversalCache(false),
-      generate_session_locally: true,
-      clientType: "TV" // use TV client for initialization
-    });
-  }
-  return ytInstance;
-}
-
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -35,35 +20,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Video ID parameter "id" is required' });
   }
 
-  try {
-    const yt = await getYouTubeInstance();
+  const pipedInstances = [
+    'https://pipedapi.kavin.rocks',
+    'https://pipedapi.tokhmi.xyz',
+    'https://pipedapi.smnz.de'
+  ];
 
-    // We get the stream using the ANDROID client type as it's more stable for downloads
-    // bypassing deciphering issues currently happening on WEB
-    const stream = await yt.download(id, {
-      type: 'audio',
-      quality: 'best',
-      client: 'ANDROID'
-    });
-
-    res.setHeader('Content-Type', 'audio/mp4'); // Typically m4a/mp4 container
-    res.setHeader('Transfer-Encoding', 'chunked');
-
-    // Pipe the stream directly to the response
-    for await (const chunk of stream) {
-      // In Vercel serverless, writing chunks to the response works effectively
-      res.write(chunk);
-    }
-
-    res.end();
-
-  } catch (error) {
-    console.error('youtubei.js stream error:', error.message);
-
-    // Fallback Proxy logic
+  for (const instance of pipedInstances) {
     try {
-      console.log(`Falling back to Piped API for video: ${id}`);
-      const pipedApiUrl = `https://pipedapi.kavin.rocks/streams/${id}`;
+      console.log(`Attempting to fetch from Piped API instance: ${instance} for video: ${id}`);
+      const pipedApiUrl = `${instance}/streams/${id}`;
       const pipedResponse = await fetch(pipedApiUrl);
 
       if (!pipedResponse.ok) {
@@ -76,45 +42,39 @@ export default async function handler(req, res) {
         throw new Error('No audio streams found from Piped API');
       }
 
-      // Get the highest bitrate audio stream
-      const bestAudioStream = pipedData.audioStreams.sort((a, b) => b.bitrate - a.bitrate)[0];
+      // Sort streams by highest bitrate
+      const sortedStreams = pipedData.audioStreams.sort((a, b) => b.bitrate - a.bitrate);
 
-      const audioResponse = await fetch(bestAudioStream.url);
+      // Prioritize m4a/mp4a format
+      let bestAudioStream = sortedStreams.find(s => s.mimeType && (s.mimeType.includes('m4a') || s.mimeType.includes('mp4a')));
 
-      if (!audioResponse.ok) {
-        throw new Error(`Failed to fetch audio from Piped URL: ${audioResponse.status}`);
+      // Fallback to highest bitrate if no m4a
+      if (!bestAudioStream) {
+        bestAudioStream = sortedStreams[0];
       }
 
-      if (!res.headersSent) {
-        res.setHeader('Content-Type', audioResponse.headers.get('content-type') || 'audio/mp4');
-        res.setHeader('Transfer-Encoding', 'chunked');
+      if (!bestAudioStream || !bestAudioStream.url) {
+         throw new Error('Could not extract a valid audio URL');
       }
 
-      // Pipe the fetched audio stream to the client
-      if (audioResponse.body) {
-        // Handle web stream response from fetch
-        for await (const chunk of audioResponse.body) {
-          res.write(chunk);
-        }
-        res.end();
-      } else {
-        // Fallback if body is not async iterable (e.g. node-fetch without stream)
-        const buffer = await audioResponse.arrayBuffer();
-        res.end(Buffer.from(buffer));
-      }
-    } catch (fallbackError) {
-      console.error('Fallback proxy error:', fallbackError.message);
+      console.log(`Successfully resolved audio URL from ${instance}. Redirecting...`);
 
-      // Check if headers have been sent before trying to send JSON error
-      if (!res.headersSent) {
-          if (error.message && error.message.includes('age-restricted')) {
-              return res.status(403).json({ error: 'Video is age-restricted and cannot be streamed' });
-          }
-          return res.status(500).json({ error: 'Failed to fetch audio stream' });
-      } else {
-          // Just end the response if headers were already sent
-          res.end();
-      }
+      // We must not use res.redirect() directly if it overwrites headers or is unavailable in raw http server context
+      // But Vercel's res.redirect is standard. Let's use writeHead instead for max control to preserve CORS.
+      res.writeHead(302, { Location: bestAudioStream.url });
+      return res.end();
+
+    } catch (error) {
+      console.error(`Error with instance ${instance}:`, error.message);
+      // Continue to the next instance
     }
+  }
+
+  // If all instances failed
+  console.error('All streaming proxies failed to resolve.');
+  if (!res.headersSent) {
+    return res.status(500).json({ error: 'All streaming proxies failed' });
+  } else {
+    res.end();
   }
 }
