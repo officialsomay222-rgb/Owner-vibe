@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { Toggle, Select, ActionButton } from './components/SettingsUI';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import { 
     Home, Search, Library, Settings, MoreVertical, 
     Share2, CircleHelp, History, ArrowUpLeft, 
@@ -369,8 +371,27 @@ const LibraryTab = () => (
     </div>
 );
 
+
 const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', setTheme: (t: 'system' | 'dark' | 'light') => void }) => {
     const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+
+    // Settings State
+    const [dynamicTheme, setDynamicTheme] = useLocalStorage('settings_dynamicTheme', true);
+    const [accentColor, setAccentColor] = useLocalStorage('settings_accentColor', 'blue');
+    const [layoutStyle, setLayoutStyle] = useLocalStorage('settings_layoutStyle', 'list');
+
+    const [contentLang, setContentLang] = useLocalStorage('settings_contentLang', 'en');
+    const [explicitContent, setExplicitContent] = useLocalStorage('settings_explicitContent', false);
+
+    const [audioQuality, setAudioQuality] = useLocalStorage('settings_audioQuality', 'high');
+    const [gaplessPlayback, setGaplessPlayback] = useLocalStorage('settings_gaplessPlayback', true);
+    const [normalizeVolume, setNormalizeVolume] = useLocalStorage('settings_normalizeVolume', true);
+    const [autoplay, setAutoplay] = useLocalStorage('settings_autoplay', true);
+
+    const [downloadQuality, setDownloadQuality] = useLocalStorage('settings_downloadQuality', 'high');
+    const [wifiOnly, setWifiOnly] = useLocalStorage('settings_wifiOnly', true);
+
+    const [sleepTimer, setSleepTimer] = useLocalStorage('settings_sleepTimer', 'off');
 
     const settingsItems = [
         { id: 'personalisation', icon: Palette, label: 'Personalisation' },
@@ -405,31 +426,113 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
                                 <ChevronDown className={`w-5 h-5 text-[#555] group-hover:text-[#888] light:text-gray-400 light:group-hover:text-gray-600 transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
                             
-                            {/* Expandable Theme Switcher inside Personalisation */}
-                            <div className={`overflow-hidden transition-all duration-300 ${isExpanded && item.id === 'personalisation' ? 'max-h-[300px] opacity-100 border-b border-white/[0.03] light:border-black/[0.04] bg-white/[0.015] light:bg-black/[0.01]' : 'max-h-0 opacity-0'}`}>
-                                <div className="p-6 flex flex-col space-y-5">
-                                    <span className="text-[14px] font-bold text-[#888] light:text-gray-500 uppercase tracking-widest pl-1 transition-colors">Theme Appearance</span>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        {[
-                                            { id: 'system', label: 'System', gradients: 'from-gray-500 to-gray-400', shadow: 'shadow-gray-500/20' },
-                                            { id: 'light', label: 'Light', gradients: 'from-blue-200 to-white text-gray-900', shadow: 'shadow-blue-200/20' },
-                                            { id: 'dark', label: 'Dark', gradients: 'from-neutral-800 to-black text-white', shadow: 'shadow-black/20' }
-                                        ].map(tOption => (
-                                            <button 
-                                                key={tOption.id}
-                                                onClick={() => setTheme(tOption.id as any)}
-                                                className={`relative flex flex-col items-center justify-center p-4 rounded-[20px] border-[2px] transition-all duration-300 group
-                                                    ${theme === tOption.id ? 'border-[#00d2ff] light:border-blue-500 bg-white/[0.05] light:bg-blue-50/50 shadow-[0_4px_20px_rgba(0,210,255,0.2)] light:shadow-[0_4px_20px_rgba(59,130,246,0.15)] -translate-y-1' : 'border-transparent bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.04] light:hover:bg-black/[0.04]'}`}
-                                            >
-                                                <div className={`w-10 h-10 rounded-full mb-3 shadow-inner bg-gradient-to-tr ${tOption.gradients} border border-white/10 light:border-black/10 flex items-center justify-center ${theme === tOption.id ? `shadow-[0_0_15px_rgba(255,255,255,0.2)] ${tOption.shadow}` : ''}`}>
-                                                    {theme === tOption.id && <div className="w-2.5 h-2.5 rounded-full bg-white light:bg-black shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>}
-                                                </div>
-                                                <span className={`text-[14px] font-bold tracking-wide transition-colors ${theme === tOption.id ? 'text-white light:text-black' : 'text-[#888] light:text-gray-500'}`}>
-                                                    {tOption.label}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
+                            <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[1000px] opacity-100 border-b border-white/[0.03] light:border-black/[0.04] bg-white/[0.015] light:bg-black/[0.01]' : 'max-h-0 opacity-0'}`}>
+                                <div className="p-6 flex flex-col space-y-2">
+                                    {item.id === 'personalisation' && (
+                                        <>
+                                            <span className="text-[14px] font-bold text-[#888] light:text-gray-500 uppercase tracking-widest pl-1 transition-colors mb-2">Theme Appearance</span>
+                                            <div className="grid grid-cols-3 gap-4 mb-4">
+                                                {[
+                                                    { id: 'system', label: 'System', gradients: 'from-gray-500 to-gray-400', shadow: 'shadow-gray-500/20' },
+                                                    { id: 'light', label: 'Light', gradients: 'from-blue-200 to-white text-gray-900', shadow: 'shadow-blue-200/20' },
+                                                    { id: 'dark', label: 'Dark', gradients: 'from-neutral-800 to-black text-white', shadow: 'shadow-black/20' }
+                                                ].map(tOption => (
+                                                    <button
+                                                        key={tOption.id}
+                                                        onClick={() => setTheme(tOption.id as any)}
+                                                        className={`relative flex flex-col items-center justify-center p-4 rounded-[20px] border-[2px] transition-all duration-300 group
+                                                            ${theme === tOption.id ? 'border-[#00d2ff] light:border-blue-500 bg-white/[0.05] light:bg-blue-50/50 shadow-[0_4px_20px_rgba(0,210,255,0.2)] light:shadow-[0_4px_20px_rgba(59,130,246,0.15)] -translate-y-1' : 'border-transparent bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.04] light:hover:bg-black/[0.04]'}`}
+                                                    >
+                                                        <div className={`w-10 h-10 rounded-full mb-3 shadow-inner bg-gradient-to-tr ${tOption.gradients} border border-white/10 light:border-black/10 flex items-center justify-center ${theme === tOption.id ? `shadow-[0_0_15px_rgba(255,255,255,0.2)] ${tOption.shadow}` : ''}`}>
+                                                            {theme === tOption.id && <div className="w-2.5 h-2.5 rounded-full bg-white light:bg-black shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>}
+                                                        </div>
+                                                        <span className={`text-[14px] font-bold tracking-wide transition-colors ${theme === tOption.id ? 'text-white light:text-black' : 'text-[#888] light:text-gray-500'}`}>
+                                                            {tOption.label}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <Toggle enabled={dynamicTheme} onChange={setDynamicTheme} label="Dynamic Theme" description="Extract accent colors from album art" />
+                                            <Select value={accentColor} onChange={setAccentColor} label="Accent Color" options={[
+                                                {id: 'blue', label: 'Ocean Blue'},
+                                                {id: 'purple', label: 'Deep Purple'},
+                                                {id: 'green', label: 'Emerald Green'},
+                                                {id: 'orange', label: 'Sunset Orange'}
+                                            ]} />
+                                            <Select value={layoutStyle} onChange={setLayoutStyle} label="Home Layout" options={[
+                                                {id: 'list', label: 'List View'},
+                                                {id: 'grid', label: 'Grid View'}
+                                            ]} />
+                                        </>
+                                    )}
+
+                                    {item.id === 'content' && (
+                                        <>
+                                            <Select value={contentLang} onChange={setContentLang} label="Content Language" description="Preferred language for search and recommendations" options={[
+                                                {id: 'en', label: 'English'},
+                                                {id: 'es', label: 'Español'},
+                                                {id: 'fr', label: 'Français'},
+                                                {id: 'de', label: 'Deutsch'},
+                                                {id: 'hi', label: 'हिन्दी'}
+                                            ]} />
+                                            <Toggle enabled={explicitContent} onChange={setExplicitContent} label="Explicit Content" description="Allow playback of explicit tracks" />
+                                        </>
+                                    )}
+
+                                    {item.id === 'music' && (
+                                        <>
+                                            <Select value={audioQuality} onChange={setAudioQuality} label="Audio Quality" description="Higher quality uses more data" options={[
+                                                {id: 'low', label: 'Data Saver (Low)'},
+                                                {id: 'normal', label: 'Normal (Standard)'},
+                                                {id: 'high', label: 'High (Best Quality)'}
+                                            ]} />
+                                            <Toggle enabled={gaplessPlayback} onChange={setGaplessPlayback} label="Gapless Playback" description="Remove silence between tracks" />
+                                            <Toggle enabled={normalizeVolume} onChange={setNormalizeVolume} label="Normalize Volume" description="Set the same volume level for all tracks" />
+                                            <Toggle enabled={autoplay} onChange={setAutoplay} label="Autoplay" description="Keep playing similar tracks when your selection ends" />
+                                        </>
+                                    )}
+
+                                    {item.id === 'download' && (
+                                        <>
+                                            <Select value={downloadQuality} onChange={setDownloadQuality} label="Download Quality" options={[
+                                                {id: 'normal', label: 'Normal (Standard)'},
+                                                {id: 'high', label: 'High (Best Quality)'}
+                                            ]} />
+                                            <Toggle enabled={wifiOnly} onChange={setWifiOnly} label="Download over Wi-Fi only" description="Save cellular data" />
+                                            <ActionButton onClick={() => alert('Downloads Cleared!')} label="Clear Downloads" description="Remove all downloaded tracks from this device" buttonText="Clear" destructive />
+                                        </>
+                                    )}
+
+                                    {item.id === 'backup' && (
+                                        <>
+                                            <ActionButton onClick={() => alert('Settings Exported!')} label="Export Settings" description="Backup your settings and playlists to a file" buttonText="Export" />
+                                            <ActionButton onClick={() => alert('Import Settings Prompt!')} label="Import Settings" description="Restore your settings from a backup file" buttonText="Import" />
+                                        </>
+                                    )}
+
+                                    {item.id === 'misc' && (
+                                        <>
+                                            <Select value={sleepTimer} onChange={setSleepTimer} label="Sleep Timer" description="Automatically stop playback after:" options={[
+                                                {id: 'off', label: 'Off'},
+                                                {id: '15', label: '15 Minutes'},
+                                                {id: '30', label: '30 Minutes'},
+                                                {id: '60', label: '1 Hour'},
+                                                {id: '120', label: '2 Hours'}
+                                            ]} />
+                                            <ActionButton onClick={() => alert('Cache Cleared!')} label="Clear Image Cache" description="Free up space by removing cached images" buttonText="Clear" destructive />
+                                        </>
+                                    )}
+
+                                    {item.id === 'info' && (
+                                        <>
+                                            <div className="flex flex-col py-3 border-b border-white/5 light:border-black/5">
+                                                <span className="text-[15px] font-medium text-white light:text-black">App Version</span>
+                                                <span className="text-[13px] text-[#888] light:text-gray-500 mt-0.5">v1.0.0 (Build 42)</span>
+                                            </div>
+                                            <ActionButton onClick={() => alert('Checking for updates...')} label="Check for Updates" buttonText="Check" />
+                                            <ActionButton onClick={() => window.open('https://github.com', '_blank')} label="Source Code" description="View project on GitHub" buttonText="View" />
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -451,6 +554,7 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
         </div>
     )
 };
+
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
