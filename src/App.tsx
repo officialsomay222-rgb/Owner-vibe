@@ -9,14 +9,18 @@ import {
     Plus, Heart, Plane, Download, ArrowDown, ListFilter,
     Palette, ListVideo, Music, Download as DownloadIcon, HardDrive, LayoutGrid, Info, ChevronDown, X, Play
 } from 'lucide-react';
+import { useMusic } from './MusicContext';
+import { MusicPlayer } from './MusicPlayer';
+import { MiniPlayer } from './MiniPlayer';
 
 // Mock Data
+// We need real video IDs for streaming to work. Let's map mock data to some real NCS video ids to make them work if clicked.
 const discoverSongs = [
-  { id: 1, title: 'KAMALI (Ultra Slowe...', artist: 'Akhmedov', img: 'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?auto=format&fit=crop&q=80&w=150' },
-  { id: 2, title: 'EL CONTROL (Ultra ...', artist: 'M4GN', img: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=150' },
-  { id: 3, title: 'Sem Tempo (Super S...', artist: 'SCARIONIX', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=150' },
-  { id: 4, title: 'Sem Tempo', artist: 'SCARIONIX', img: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=150' },
-  { id: 5, title: 'MONTAGEM - PR...', artist: 'SCARIONIX', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'K4DyBUG242c', title: 'KAMALI (Ultra Slowe...', artist: 'Akhmedov', thumbnailUrl: 'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'p7ZsBPK656s', title: 'EL CONTROL (Ultra ...', artist: 'M4GN', thumbnailUrl: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'J2X5mJ3HDYE', title: 'Sem Tempo (Super S...', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'gJe3LpXg2eE', title: 'Sem Tempo', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'AOeY-nDp7hI', title: 'MONTAGEM - PR...', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=150' },
 ];
 
 const recommendedPlaylists = [
@@ -76,16 +80,23 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
   </header>
 );
 
-const HomeTab = () => (
+const HomeTab = () => {
+    const { playSong } = useMusic();
+
+    return (
     <div className="flex flex-col pt-[84px] pb-32 px-5 space-y-12 animate-in fade-in duration-500">
         <section>
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Discover</h2>
             <div className="flex flex-col space-y-3">
                 {discoverSongs.map((song) => (
-                    <div key={song.id} className="flex items-center justify-between p-3 rounded-[20px] bg-white/[0.01] light:bg-black/[0.01] border border-white/[0.03] hover:border-white/[0.08] light:border-black/[0.03] light:hover:border-black/[0.08] hover:bg-white/[0.04] light:hover:bg-black/[0.03] group cursor-pointer active:scale-[0.98] transition-all duration-300 ease-out shadow-[0_4px_20px_rgba(0,0,0,0.2)] light:shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                    <div
+                        key={song.videoId}
+                        onClick={() => playSong(song, discoverSongs)}
+                        className="flex items-center justify-between p-3 rounded-[20px] bg-white/[0.01] light:bg-black/[0.01] border border-white/[0.03] hover:border-white/[0.08] light:border-black/[0.03] light:hover:border-black/[0.08] hover:bg-white/[0.04] light:hover:bg-black/[0.03] group cursor-pointer active:scale-[0.98] transition-all duration-300 ease-out shadow-[0_4px_20px_rgba(0,0,0,0.2)] light:shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)]"
+                    >
                         <div className="flex items-center space-x-4">
                             <div className="relative overflow-hidden rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm border border-white/[0.04] light:border-black/[0.04]">
-                                <img src={song.img} alt={song.title} className="w-[60px] h-[60px] object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                                <img src={song.thumbnailUrl} alt={song.title} className="w-[60px] h-[60px] object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                     <Play className="w-6 h-6 text-white fill-white ml-0.5 drop-shadow-md" />
                                 </div>
@@ -95,7 +106,10 @@ const HomeTab = () => (
                                 <span className="text-[#888] light:text-gray-500 transition-colors text-[13px] font-medium tracking-wide line-clamp-1 group-hover:text-[#aaa] light:group-hover:text-gray-700">{song.artist}</span>
                             </div>
                         </div>
-                        <button className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); }}
+                            className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90"
+                        >
                             <MoreVertical className="w-5 h-5" />
                         </button>
                     </div>
@@ -140,13 +154,15 @@ const HomeTab = () => (
             </div>
         </section>
     </div>
-);
+  );
+};
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const { playSong } = useMusic();
 
     const handleSearch = async (overrideQuery?: string) => {
         const q = overrideQuery || query;
@@ -230,7 +246,11 @@ const SearchTab = () => {
                     ) : (
                         <div className="flex flex-col space-y-4">
                             {results.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300">
+                                <div
+                                    key={i}
+                                    onClick={() => playSong(item, results)}
+                                    className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300"
+                                >
                                     <div className="flex items-center space-x-4">
                                         <div className="relative w-14 h-14 rounded-md overflow-hidden shrink-0">
                                             <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
@@ -500,6 +520,9 @@ export default function App() {
         {activeTab === 'library' && <LibraryTab />}
         {activeTab === 'settings' && <SettingsTab theme={theme} setTheme={setTheme} />}
       </main>
+
+      <MiniPlayer />
+      <MusicPlayer />
 
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-[#000000]/80 backdrop-blur-[48px] border-t border-white/[0.08] pb-safe pt-2 shadow-[0_-10px_50px_rgba(0,0,0,0.6)] light:bg-white/90 light:border-black/[0.08] light:shadow-[0_-5px_30px_rgba(0,0,0,0.08)] transition-colors duration-500">
         <div className="flex items-center justify-around h-[70px] pointer-events-auto max-w-md mx-auto px-2 relative">
