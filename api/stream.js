@@ -1,203 +1,181 @@
+export const runtime = 'edge';
 import { Innertube, UniversalCache } from 'youtubei.js';
 
-export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges, Content-Type');
+export default async function handler(request) {
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
 
-  // Handle preflight request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  // Handle CORS
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Range',
+        'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type',
+      },
+    });
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (request.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
   }
-
-  const { id } = req.query;
 
   if (!id) {
-    return res.status(400).json({ error: 'Video ID parameter "id" is required' });
+    return new Response(JSON.stringify({ error: 'Video ID parameter "id" is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
   }
 
-  const pipedInstances = [
-    'https://pipedapi.kavin.rocks',
-    'https://piped.video/api',
-    'https://pipedapi.mha.fi',
-    'https://api.piped.privacydev.net',
-    'https://pipedapi.tokhmi.xyz',
-    'https://pipedapi.smnz.de'
-  ];
+  const rangeHeader = request.headers.get('range');
+  console.log(`[Stream] Edge proxy requested for ID: ${id}, Range: ${rangeHeader || 'none'}`);
 
-  for (const instance of pipedInstances) {
-    try {
-      console.log(`Attempting to fetch from Piped API instance: ${instance} for video: ${id}`);
-      // Remove trailing slash if exists for cleaner URLs
-      const baseUrl = instance.endsWith('/') ? instance.slice(0, -1) : instance;
-      const pipedApiUrl = `${baseUrl}/streams/${id}`;
-      const pipedResponse = await fetch(pipedApiUrl);
-
-      if (!pipedResponse.ok) {
-        throw new Error(`Piped API failed with status ${pipedResponse.status}`);
-      }
-
-      const pipedData = await pipedResponse.json();
-
-      if (!pipedData.audioStreams || pipedData.audioStreams.length === 0) {
-        throw new Error('No audio streams found from Piped API');
-      }
-
-      // Sort streams by highest bitrate
-      const sortedStreams = pipedData.audioStreams.sort((a, b) => b.bitrate - a.bitrate);
-
-      // Prioritize m4a/mp4a format
-      let bestAudioStream = sortedStreams.find(s => s.mimeType && (s.mimeType.includes('m4a') || s.mimeType.includes('mp4a')));
-
-      // Fallback to highest bitrate if no m4a
-      if (!bestAudioStream) {
-        bestAudioStream = sortedStreams[0];
-      }
-
-      if (!bestAudioStream || !bestAudioStream.url) {
-         throw new Error('Could not extract a valid audio URL');
-      }
-
-      console.log(`Successfully resolved audio URL from ${instance}. Redirecting...`);
-
-      // We must not use res.redirect() directly if it overwrites headers or is unavailable in raw http server context
-      res.writeHead(302, { Location: bestAudioStream.url });
-      return res.end();
-
-    } catch (error) {
-      console.error(`Error with instance ${instance}:`, error.message);
-      // Continue to the next instance
-    }
-  }
-
-  // If all instances failed, fallback to youtubei.js
-  console.log('All Piped instances failed. Falling back to youtubei.js...');
-
+  // 1. Try api.cobalt.tools
   try {
-    const yt = await Innertube.create({ clientType: 'ANDROID_VR', cache: new UniversalCache(false) });
+    console.log('[Stream] Attempting to fetch stream via api.cobalt.tools...');
+    const cobaltPayload = {
+      url: `https://www.youtube.com/watch?v=${id}`,
+      downloadMode: 'audio',
+      audioFormat: 'best',
+    };
+
+    const cobaltRes = await fetch('https://api.cobalt.tools', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(cobaltPayload),
+    });
+
+    if (!cobaltRes.ok) {
+       console.error(`[Stream] Cobalt API returned status ${cobaltRes.status}`);
+       const cobaltError = await cobaltRes.text();
+       console.error(`[Stream] Cobalt Error:`, cobaltError);
+       throw new Error('Cobalt failed');
+    }
+
+    const cobaltData = await cobaltRes.json();
+    console.log(`[Stream] Cobalt Data status:`, cobaltData.status);
+
+    if (cobaltData.status === 'redirect' || cobaltData.status === 'tunnel') {
+        const streamUrl = cobaltData.url;
+        console.log(`[Stream] Cobalt returned stream URL: ${streamUrl.substring(0, 50)}...`);
+
+        // Fetch from the stream URL and proxy it back
+        const fetchHeaders = new Headers();
+        if (rangeHeader) {
+            fetchHeaders.set('Range', rangeHeader);
+        }
+
+        const streamRes = await fetch(streamUrl, {
+            headers: fetchHeaders
+        });
+
+        if (!streamRes.ok && streamRes.status !== 206) {
+             throw new Error(`Failed to fetch from Cobalt stream URL, status: ${streamRes.status}`);
+        }
+
+        const responseHeaders = new Headers({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type',
+            'Accept-Ranges': 'bytes',
+        });
+
+        // Copy over relevant headers
+        const headersToCopy = ['Content-Type', 'Content-Length', 'Content-Range'];
+        headersToCopy.forEach(header => {
+            const val = streamRes.headers.get(header);
+            if (val) responseHeaders.set(header, val);
+        });
+
+        // Fallback Content-Type if not provided
+        if (!responseHeaders.has('Content-Type')) {
+            responseHeaders.set('Content-Type', 'audio/mp4');
+        }
+
+        return new Response(streamRes.body, {
+            status: streamRes.status,
+            headers: responseHeaders
+        });
+    } else {
+        throw new Error('Cobalt did not return a tunnel or redirect status');
+    }
+
+  } catch (err) {
+    console.log(`[Stream] Cobalt fallback failed: ${err.message}. Falling back to youtubei.js...`);
+  }
+
+  // 2. Fallback to youtubei.js
+  try {
+    const yt = await Innertube.create({ clientType: 'ANDROID', cache: new UniversalCache(false) });
     const info = await yt.getBasicInfo(id);
-    const format = info.chooseFormat({ type: 'audio', quality: 'best' });
+
+    // Prioritize mp4a/m4a
+    let format = info.chooseFormat({ type: 'audio', quality: 'best', format: 'mp4' });
+    if (!format) {
+         format = info.chooseFormat({ type: 'audio', quality: 'best' });
+    }
 
     if (!format || !format.content_length) {
       throw new Error('Could not find a valid audio format with content_length from youtubei.js');
     }
 
-    console.log(`Piping fallback stream directly: ${format.mime_type}, size: ${format.content_length}`);
+    console.log(`[Stream] YouTubei.js found stream: ${format.mime_type}, size: ${format.content_length}, direct URL: ${!!format.url}`);
 
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Content-Length', format.content_length);
-    res.setHeader('Content-Type', format.mime_type || 'audio/mp4');
+    if (format.url) {
+        // Direct stream fetch
+        const fetchHeaders = new Headers();
+        if (rangeHeader) {
+            fetchHeaders.set('Range', rangeHeader);
+        }
 
-    // Handle range requests
-    const range = req.headers.range;
-    let start = 0;
-    let end = format.content_length - 1;
+        console.log(`[Stream] Fetching direct stream from youtubei.js URL...`);
+        const streamRes = await fetch(format.url, {
+            headers: fetchHeaders
+        });
 
-    if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      start = parseInt(parts[0], 10);
-      end = parts[1] ? parseInt(parts[1], 10) : format.content_length - 1;
-      const chunksize = (end - start) + 1;
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${format.content_length}`,
-        'Content-Length': chunksize,
-        'Content-Type': format.mime_type || 'audio/mp4',
-      });
+        if (!streamRes.ok && streamRes.status !== 206) {
+             throw new Error(`Failed to fetch from direct youtubei.js stream URL, status: ${streamRes.status}`);
+        }
+
+        const responseHeaders = new Headers({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Type',
+            'Accept-Ranges': 'bytes',
+        });
+
+        const headersToCopy = ['Content-Type', 'Content-Length', 'Content-Range'];
+        headersToCopy.forEach(header => {
+            const val = streamRes.headers.get(header);
+            if (val) responseHeaders.set(header, val);
+        });
+
+         if (!responseHeaders.has('Content-Type')) {
+            responseHeaders.set('Content-Type', format.mime_type || 'audio/mp4');
+        }
+
+        return new Response(streamRes.body, {
+            status: streamRes.status,
+            headers: responseHeaders
+        });
+
     } else {
-      res.writeHead(200);
+         throw new Error('Direct URL not found in youtubei.js format');
     }
 
-    // Quick write helper to respect backpressure slightly
-    const writeToRes = (chunk) => new Promise((resolve, reject) => {
-        if (res.destroyed) {
-            return reject(new Error('Response destroyed'));
-        }
-        if (!res.write(chunk)) {
-            res.once('drain', resolve);
-        } else {
-            resolve();
-        }
-    });
-
-    try {
-      if (format.url) {
-          // If a direct URL is available, we can fetch it with Range header
-          console.log(`Fetching from direct URL with Range: bytes=${start}-${end}`);
-          const response = await fetch(format.url, {
-              headers: {
-                  Range: `bytes=${start}-${end}`
-              }
-          });
-
-          if (!response.ok) {
-             throw new Error(`Direct fetch failed with status ${response.status}`);
-          }
-
-          // @ts-ignore
-          for await (const chunk of response.body) {
-              if (res.destroyed) break;
-              await writeToRes(chunk);
-          }
-      } else {
-          // Fallback to downloading using yt.download if no url directly available (rare for ANDROID_VR but possible)
-          console.log(`Downloading stream from yt.download...`);
-          const stream = await yt.download(id, {
-            type: 'audio',
-            quality: 'best',
-            client: 'ANDROID_VR'
-          });
-
-          let downloaded = 0;
-          let bytesWritten = 0;
-          const targetLength = end - start + 1;
-
-          for await (const chunk of stream) {
-            if (res.destroyed) break;
-
-            const chunkStart = downloaded;
-            const chunkEnd = downloaded + chunk.length - 1;
-
-            // Check if chunk overlaps with our requested range
-            if (chunkEnd >= start && chunkStart <= end) {
-               const sliceStart = Math.max(0, start - chunkStart);
-               // Ensure we don't write past the end byte
-               const sliceEnd = Math.min(chunk.length, end - chunkStart + 1);
-               const toWrite = chunk.slice(sliceStart, sliceEnd);
-
-               await writeToRes(toWrite);
-               bytesWritten += toWrite.length;
-
-               if (bytesWritten >= targetLength) {
-                   break;
-               }
-            }
-            downloaded += chunk.length;
-          }
-      }
-    } catch (streamErr) {
-       console.error('Stream piping error:', streamErr.message);
-    } finally {
-       if (!res.destroyed) {
-          res.end();
-       }
-    }
-    return;
-
-  } catch (ytError) {
-    console.error('youtubei.js fallback failed:', ytError.message);
+  } catch (ytErr) {
+     console.error('[Stream] youtubei.js fallback also failed:', ytErr);
   }
 
-  // If all instances AND fallback failed
-  console.error('All streaming proxies and fallback failed to resolve.');
-  if (!res.headersSent) {
-    return res.status(500).json({ error: 'All streaming proxies failed' });
-  } else {
-    res.end();
-  }
+  // 3. Complete failure
+  console.error('[Stream] All streaming proxy methods failed.');
+  return new Response(JSON.stringify({ error: 'All streaming proxies failed' }), {
+    status: 500,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
 }
