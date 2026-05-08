@@ -45,7 +45,13 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentSong]);
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current && currentSong) {
+      audioRef.current.load();
+    }
+  }, [currentSong]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -128,6 +134,14 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       <audio
         ref={audioRef}
         src={currentSong ? `/api/stream?id=${currentSong.videoId}` : ''}
+        autoPlay={isPlaying}
+        playsInline={true}
+        crossOrigin="anonymous"
+        onCanPlay={() => {
+          if (isPlaying && audioRef.current) {
+            audioRef.current.play().catch(e => console.error("Playback error onCanPlay", e));
+          }
+        }}
       />
     </MusicContext.Provider>
   );
