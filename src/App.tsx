@@ -284,7 +284,19 @@ const SearchTab = () => {
     );
 };
 
-const LibraryTab = () => (
+const LibraryTab = () => {
+    const [activeSection, setActiveSection] = useState('Playlists');
+
+    // Using mock data for demonstration
+    const { playSong } = useMusic();
+    const myPlaylists = [
+        { id: 1, title: 'Gym Motivation', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200', views: '398 MILLION VIEWS' },
+        { id: 2, title: 'Late Night Vibes', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200' },
+        { id: 3, title: 'Chill Lo-Fi', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=200' },
+        { id: 4, title: 'Workout Mix', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=200' },
+    ];
+
+    return (
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
         <div className="flex items-center justify-between mb-8 pl-1">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Library</h2>
@@ -294,15 +306,20 @@ const LibraryTab = () => (
         </div>
         
         <div className="flex space-x-8 border-b border-white/[0.04] light:border-black/[0.06] pb-0 mb-8 overflow-x-auto no-scrollbar pl-1">
-            <button className="text-white/95 light:text-gray-900 transition-colors text-[16px] font-bold border-b-[3px] border-[#00d2ff] light:border-blue-500 pb-3 whitespace-nowrap tracking-wide">Playlists</button>
-            <button className="text-[#666] light:text-gray-500 text-[16px] font-medium pb-3 whitespace-nowrap hover:text-white light:hover:text-gray-900 transition-colors tracking-wide">Songs</button>
-            <button className="text-[#666] light:text-gray-500 text-[16px] font-medium pb-3 whitespace-nowrap hover:text-white light:hover:text-gray-900 transition-colors tracking-wide">Albums</button>
-            <button className="text-[#666] light:text-gray-500 text-[16px] font-medium pb-3 whitespace-nowrap hover:text-white light:hover:text-gray-900 transition-colors tracking-wide">Artists</button>
+            {['Playlists', 'Songs', 'Albums', 'Artists'].map(tab => (
+                <button
+                    key={tab}
+                    onClick={() => setActiveSection(tab)}
+                    className={`text-[16px] font-bold pb-3 whitespace-nowrap tracking-wide transition-colors ${activeSection === tab ? 'text-white/95 light:text-gray-900 border-b-[3px] border-[#00d2ff] light:border-blue-500' : 'text-[#666] light:text-gray-500 hover:text-white light:hover:text-gray-900 font-medium'}`}
+                >
+                    {tab}
+                </button>
+            ))}
         </div>
         
         <div className="flex items-center justify-between mb-8 pl-1">
             <div className="flex items-center text-[#777] light:text-gray-500 transition-colors space-x-3 text-[13px] bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-1.5 rounded-[12px] border border-white/[0.04] light:border-black/[0.06]">
-               <span className="font-medium tracking-wide">11 items</span>
+               <span className="font-medium tracking-wide">{myPlaylists.length} items</span>
                <div className="w-1 h-1 rounded-full bg-[#555] light:bg-gray-400"></div>
                <span className="font-semibold tracking-wider text-[#aaa] light:text-gray-600">A-Z</span>
             </div>
@@ -355,33 +372,47 @@ const LibraryTab = () => (
            </div>
         </div>
 
+
         <div className="grid grid-cols-2 gap-5">
-            <div className="flex flex-col cursor-pointer group">
-                <div className="relative w-full aspect-square rounded-[24px] overflow-hidden mb-2 group-active:scale-[0.97] shadow-[0_8px_24px_rgba(0,0,0,0.5)] light:shadow-md border border-white/[0.04] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 transition-all duration-300">
-                    <img src="https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200" alt="Playlist" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50 opacity-80 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="absolute top-0 left-0 bg-[#e50914] text-white px-3 py-1.5 rounded-br-2xl text-[11px] font-black leading-tight tracking-wider shadow-lg">
-                        398<br/>MILLION<br/>VIEWS
+            {activeSection === 'Playlists' && myPlaylists.map(playlist => (
+                <div key={playlist.id} className="flex flex-col cursor-pointer group" onClick={() => {
+                    // Play a mock song if a playlist is clicked
+                    playSong({
+                        videoId: 'K4DyBUG242c',
+                        title: playlist.title,
+                        artist: 'Playlist Artist',
+                        thumbnailUrl: playlist.img
+                    });
+                }}>
+                    <div className="relative w-full aspect-square rounded-[24px] overflow-hidden mb-2 group-active:scale-[0.97] shadow-[0_8px_24px_rgba(0,0,0,0.5)] light:shadow-md border border-white/[0.04] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 transition-all duration-300">
+                        <img src={playlist.img} alt="Playlist" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50 opacity-80 group-hover:opacity-60 transition-opacity"></div>
+                        {playlist.views && (
+                            <div className="absolute top-0 left-0 bg-[#e50914] text-white px-3 py-1.5 rounded-br-2xl text-[11px] font-black leading-tight tracking-wider shadow-lg">
+                                {playlist.views.split(' ').map((word, i) => <React.Fragment key={i}>{word}<br/></React.Fragment>)}
+                            </div>
+                        )}
+                        <div className="absolute bottom-4 right-4 w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,210,255,0.4)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                            <Play className="w-5 h-5 text-black fill-black ml-0.5" />
+                        </div>
                     </div>
-                    <div className="absolute bottom-4 right-4 w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,210,255,0.4)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                        <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                    </div>
+                    <span className="text-white/90 light:text-gray-800 font-bold px-1 text-[15px] truncate">{playlist.title}</span>
+                    <span className="text-[#888] light:text-gray-500 px-1 text-[13px] truncate">{playlist.subtitle}</span>
                 </div>
-                <span className="text-white/90 light:text-gray-800 font-bold px-1 text-[15px]">Gym Motivation</span>
-            </div>
-            <div className="flex flex-col cursor-pointer group">
-                <div className="relative w-full aspect-square rounded-[24px] overflow-hidden mb-2 group-active:scale-[0.97] shadow-[0_8px_24px_rgba(0,0,0,0.5)] light:shadow-md border border-white/[0.04] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 transition-all duration-300">
-                    <img src="https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200" alt="Playlist" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-                    <div className="absolute bottom-4 right-4 w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,210,255,0.4)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                        <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                    </div>
+            ))}
+
+            {activeSection !== 'Playlists' && (
+                <div className="col-span-2 flex flex-col items-center justify-center py-10 text-center">
+                    <Library className="w-16 h-16 text-white/20 light:text-black/20 mb-4" />
+                    <span className="text-white/80 light:text-gray-700 font-semibold text-lg">No {activeSection.toLowerCase()} found</span>
+                    <span className="text-[#888] light:text-gray-500 text-sm mt-2 max-w-[250px]">Your saved {activeSection.toLowerCase()} will appear here. Start exploring to add some!</span>
                 </div>
-                <span className="text-white/90 light:text-gray-800 font-bold px-1 text-[15px]">Late Night Vibes</span>
-            </div>
+            )}
         </div>
+
     </div>
-);
+    );
+};
 
 
 const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', setTheme: (t: 'system' | 'dark' | 'light') => void }) => {
