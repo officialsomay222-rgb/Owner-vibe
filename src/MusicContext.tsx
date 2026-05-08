@@ -160,11 +160,17 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ref={audioRef}
         src={currentSong ? `/api/stream?id=${currentSong.videoId}` : ''}
         playsInline={true}
-        crossOrigin="anonymous"
+        onLoadStart={() => console.log('1. Audio: Load Started')}
+        onLoadedMetadata={() => console.log('2. Audio: Metadata Loaded')}
         onCanPlay={() => {
-          if (isPlaying) {
-            safePlay();
-          }
+          console.log('3. Audio: Can Play (Buffer ready)');
+          safePlay(); // Trigger our safe play here
+        }}
+        onWaiting={() => console.log('Audio: Waiting for data/buffering...')}
+        onStalled={() => console.warn('Audio: Stalled (Network issue)')}
+        onError={(e) => {
+          console.error('Audio Tag Fatal Error:', e.currentTarget.error);
+          console.log('Failed URL:', currentSong ? `/api/stream?id=${currentSong.videoId}` : 'None');
         }}
       />
     </MusicContext.Provider>
