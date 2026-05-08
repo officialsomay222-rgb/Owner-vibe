@@ -52,7 +52,7 @@ const searchHistory = [
 ];
 
 const Header = ({ isVisible }: { isVisible: boolean }) => (
-  <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 bg-black/60 backdrop-blur-[40px] transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+  <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 pt-safe bg-black/60 backdrop-blur-[40px] transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
     <div className="flex items-center space-x-1 pl-1">
       <div className="flex items-baseline">
         <span className="text-[24px] font-bold tracking-widest text-[#f0f0f0] drop-shadow-sm font-serif light:text-gray-900 transition-colors">❍Ꮿꪀꫀ𝚁</span>
@@ -627,7 +627,8 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] text-[#eaeaea] selection:bg-cyan-500/30 font-sans light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] light:text-gray-900 transition-colors duration-500">
+    <div className="min-h-screen app-wrapper pl-safe pr-safe bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] text-[#eaeaea] selection:bg-cyan-500/30 font-sans light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] light:text-gray-900 transition-colors duration-500">
+      <div className="edge-to-edge-bg bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] transition-colors duration-500"></div>
       <Header isVisible={showHeader} />
       
       <main className="w-full max-w-md mx-auto relative min-h-screen overflow-x-hidden pt-1">
