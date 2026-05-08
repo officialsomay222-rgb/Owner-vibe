@@ -37,10 +37,26 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const safePlay = async () => {
+    if (!audioRef.current) return;
+    try {
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('SafePlay: Playback aborted by new load request. Safely ignored.');
+      } else {
+        console.error('SafePlay: Actual playback error:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Playback error", e));
+        safePlay();
       } else {
         audioRef.current.pause();
       }
@@ -73,6 +89,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [queue, currentSong]);
 
   const playSong = (song: Song, newQueue?: Song[]) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setCurrentSong(song);
     if (newQueue) {
       setQueue(newQueue);
@@ -93,6 +112,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (queue.length === 0 || !currentSong) return;
     const currentIndex = queue.findIndex(s => s.videoId === currentSong.videoId);
     if (currentIndex !== -1 && currentIndex < queue.length - 1) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
       setCurrentSong(queue[currentIndex + 1]);
       setIsPlaying(true);
     }
@@ -102,6 +124,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (queue.length === 0 || !currentSong) return;
     const currentIndex = queue.findIndex(s => s.videoId === currentSong.videoId);
     if (currentIndex > 0) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
       setCurrentSong(queue[currentIndex - 1]);
       setIsPlaying(true);
     }
@@ -134,12 +159,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       <audio
         ref={audioRef}
         src={currentSong ? `/api/stream?id=${currentSong.videoId}` : ''}
-        autoPlay={isPlaying}
         playsInline={true}
         crossOrigin="anonymous"
         onCanPlay={() => {
-          if (isPlaying && audioRef.current) {
-            audioRef.current.play().catch(e => console.error("Playback error onCanPlay", e));
+          if (isPlaying) {
+            safePlay();
           }
         }}
       />
