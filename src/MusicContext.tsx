@@ -136,6 +136,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         src={currentSong ? `/api/stream?id=${currentSong.videoId}` : ''}
         autoPlay={isPlaying}
         playsInline={true}
+        crossOrigin="anonymous"
         onCanPlay={() => {
           if (isPlaying && audioRef.current) {
             audioRef.current.play().catch(e => console.error("Playback error onCanPlay", e));
