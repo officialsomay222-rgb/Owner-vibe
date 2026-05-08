@@ -12,14 +12,16 @@ function vercelApiProxyPlugin(): Plugin {
         if (req.url && req.url.startsWith('/api/')) {
           try {
             // Parse URL to get path and query
-            const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            const protocol = req.headers['x-forwarded-proto'] || 'http';
+            const host = req.headers.host || 'localhost';
+            const urlObj = new URL(req.url, `${protocol}://${host}`);
             const pathName = urlObj.pathname;
 
-            // Mock req.query which is provided by Vercel
+            // Mock req.query which is provided by Vercel for Node envs
             // @ts-ignore
             req.query = Object.fromEntries(urlObj.searchParams);
 
-            // Mock res.status and res.json which are provided by Vercel
+            // Mock res.status and res.json for Node envs
             // @ts-ignore
             res.status = function(statusCode) {
               res.statusCode = statusCode;
@@ -31,15 +33,44 @@ function vercelApiProxyPlugin(): Plugin {
               res.end(JSON.stringify(data));
             };
 
-            // Map /api/stream -> ./api/stream.js
-            // In a real Vercel environment, it maps to exactly the file in the api folder
             const filePath = path.resolve(__dirname, `.${pathName}.js`);
-
-            // Bypass node's module cache for local dev
             const apiModule = await import(`${filePath}?update=${Date.now()}`);
 
             if (apiModule.default) {
-              await apiModule.default(req, res);
+              // Create Web Request for Edge functions
+              const headers = new Headers();
+              for (const key in req.headers) {
+                if (req.headers[key]) {
+                  headers.set(key, req.headers[key] as string);
+                }
+              }
+              const webReq = new Request(urlObj.href, {
+                method: req.method,
+                headers
+              });
+
+              // Call handler with both Web Request and Node req/res (for backwards compatibility)
+              const result = await apiModule.default(webReq, res);
+
+              // If it returns a Web Response (Edge Runtime)
+              if (result instanceof Response) {
+                res.statusCode = result.status;
+                result.headers.forEach((value, key) => {
+                  res.setHeader(key, value);
+                });
+
+                if (result.body) {
+                  const reader = result.body.getReader();
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    res.write(value);
+                  }
+                  res.end();
+                } else {
+                  res.end();
+                }
+              }
               return;
             } else {
               res.statusCode = 500;
@@ -72,8 +103,6 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
