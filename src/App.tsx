@@ -647,7 +647,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen app-wrapper pl-safe pr-safe bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] text-[#eaeaea] selection:bg-cyan-500/30 font-sans light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] light:text-gray-900 transition-colors duration-500">
+    <div className="h-full w-full app-wrapper pl-safe pr-safe bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] text-[#eaeaea] selection:bg-cyan-500/30 font-sans light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] light:text-gray-900 transition-colors duration-500">
       <div className="edge-to-edge-bg bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] transition-colors duration-500"></div>
       <Header isVisible={showHeader} />
       
