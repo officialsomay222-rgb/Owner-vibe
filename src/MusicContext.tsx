@@ -71,7 +71,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           clientType: 'IOS' // use IOS to bypass IP restrictions for streaming
         });
 
-        const info = await yt.getBasicInfo(currentSong.videoId, { client: 'IOS' });
+        const info = await yt.getBasicInfo(currentSong.videoId, 'IOS');
         const format = info.chooseFormat({
           type: 'audio',
           quality: 'best',
