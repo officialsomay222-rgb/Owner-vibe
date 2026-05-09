@@ -37,6 +37,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const [streamUrl, setStreamUrl] = useState('');
+
   const safePlay = async () => {
     if (!audioRef.current) return;
     try {
@@ -54,20 +56,72 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    if (audioRef.current) {
+    const fetchStreamUrl = async () => {
+      if (!currentSong) {
+        setStreamUrl('');
+        return;
+      }
+
+      try {
+        const { Innertube, UniversalCache } = await import('youtubei.js');
+        // We reuse the cache from useYouTubeSearch internally because Innertube handles sessions.
+        const yt = await Innertube.create({
+          cache: new UniversalCache(true), // Enable caching so ciphers survive app restarts
+          generate_session_locally: true,
+          clientType: 'IOS' // use IOS to bypass IP restrictions for streaming
+        });
+
+        const info = await yt.getBasicInfo(currentSong.videoId, 'IOS');
+        const format = info.chooseFormat({
+          type: 'audio',
+          quality: 'best',
+          format: 'mp4',
+          client: 'IOS' as any
+        });
+
+        if (!format) {
+          console.error("No suitable audio format found");
+          return;
+        }
+
+        let rawUrl = format.url;
+        if (!rawUrl) {
+          try {
+            rawUrl = await format.decipher(yt.session.player);
+          } catch (e) {
+            console.error("Decipher failed:", e);
+          }
+        }
+
+        if (rawUrl) {
+           // We route the raw URL through our local Service Worker to bypass CORS
+           setStreamUrl(`/proxy-stream?url=${encodeURIComponent(rawUrl)}`);
+        } else {
+           console.error("Could not extract raw URL");
+        }
+      } catch (err) {
+        console.error("Error fetching stream URL:", err);
+      }
+    };
+
+    fetchStreamUrl();
+  }, [currentSong]);
+
+  useEffect(() => {
+    if (audioRef.current && streamUrl) {
       if (isPlaying) {
         safePlay();
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying]);
+  }, [isPlaying, streamUrl]);
 
   useEffect(() => {
-    if (audioRef.current && currentSong) {
+    if (audioRef.current && streamUrl) {
       audioRef.current.load();
     }
-  }, [currentSong]);
+  }, [streamUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -158,7 +212,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
       <audio
         ref={audioRef}
-        src={currentSong ? `/api/stream?id=${currentSong.videoId}` : ''}
+        src={streamUrl}
         playsInline={true}
         onLoadStart={() => console.log('1. Audio: Load Started')}
         onLoadedMetadata={() => console.log('2. Audio: Metadata Loaded')}
@@ -170,7 +224,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         onStalled={() => console.warn('Audio: Stalled (Network issue)')}
         onError={(e) => {
           console.error('Audio Tag Fatal Error:', e.currentTarget.error);
-          console.log('Failed URL:', currentSong ? `/api/stream?id=${currentSong.videoId}` : 'None');
+          console.log('Failed URL:', streamUrl);
         }}
       />
     </MusicContext.Provider>

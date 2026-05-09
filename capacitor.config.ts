@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Owner Vibe',
   webDir: 'dist',
   plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
     Keyboard: {
       resize: 'none' as any,
     },

@@ -160,33 +160,22 @@ const HomeTab = () => {
   );
 };
 
+import { useYouTubeSearch } from './hooks/useYouTubeSearch';
+
 const SearchTab = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const { playSong } = useMusic();
+    const { search, isSearching, error } = useYouTubeSearch();
 
     const handleSearch = async (overrideQuery?: string) => {
         const q = overrideQuery || query;
         if (!q.trim()) return;
-        setIsSearching(true);
         setHasSearched(true);
-        try {
-            const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-            if (res.ok) {
-                const data = await res.json();
-                setResults(data);
-            } else {
-                console.error("Search failed");
-                setResults([]);
-            }
-        } catch (error) {
-            console.error("Error fetching search results:", error);
-            setResults([]);
-        } finally {
-            setIsSearching(false);
-        }
+
+        const data = await search(q);
+        setResults(data);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
