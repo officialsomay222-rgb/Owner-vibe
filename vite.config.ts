@@ -11,7 +11,8 @@ export default defineConfig(({mode}) => {
       react(),
       tailwindcss(),
       nodePolyfills({
-        include: ['crypto', 'buffer', 'stream', 'http', 'https', 'url', 'zlib'],
+        // By not providing an `include` array, it defaults to polyfilling all necessary standard Node modules.
+        // youtubei.js dependencies usually require quite a few modules beyond the previous strict list.
         globals: {
           Buffer: true,
           global: true,
