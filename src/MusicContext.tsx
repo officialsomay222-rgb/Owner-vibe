@@ -68,7 +68,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const yt = await Innertube.create({
           cache: new UniversalCache(true), // Enable caching so ciphers survive app restarts
           generate_session_locally: true,
-          client_type: 'IOS' as any // use IOS to bypass IP restrictions for streaming
+          clientType: 'IOS' // use IOS to bypass IP restrictions for streaming
         });
 
         const info = await yt.getBasicInfo(currentSong.videoId, { client: 'IOS' });
