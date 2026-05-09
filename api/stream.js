@@ -1,6 +1,5 @@
 import { Innertube, UniversalCache } from 'youtubei.js';
 
-export const runtime = 'edge';
 
 export default async function handler(req) {
   try {
