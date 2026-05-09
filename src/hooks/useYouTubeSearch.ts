@@ -13,7 +13,7 @@ const getYouTubeInstance = async () => {
   initPromise = Innertube.create({
     cache: new UniversalCache(true), // We'll just use the default internal IndexedDB cache that UniversalCache implements when available, passing an object causes type errors
     generate_session_locally: true,
-    clientType: 'WEB' // We use WEB for browser compatibility, could also try TV if there are issues
+    client_type: 'WEB' as any // We use WEB for browser compatibility, could also try TV if there are issues
   }).then(instance => {
     ytInstance = instance;
     return instance;

@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { MusicProvider } from './MusicContext.tsx';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -16,8 +17,10 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MusicProvider>
-      <App />
-    </MusicProvider>
+    <ErrorBoundary>
+      <MusicProvider>
+        <App />
+      </MusicProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
