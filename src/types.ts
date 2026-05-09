@@ -4,4 +4,5 @@ export interface Song {
   artist: string;
   thumbnailUrl: string;
   duration?: string;
+  streamUrl?: string;
 }

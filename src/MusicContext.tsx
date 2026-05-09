@@ -62,42 +62,30 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
+      // If we already have the streamUrl from search results, use it
+      if (currentSong.streamUrl) {
+        setStreamUrl(currentSong.streamUrl);
+        return;
+      }
+
+      // Fetch from official jiosaavn api
       try {
-        const { Innertube, UniversalCache } = await import('youtubei.js');
-        // We reuse the cache from useYouTubeSearch internally because Innertube handles sessions.
-        const yt = await Innertube.create({
-          cache: new UniversalCache(true), // Enable caching so ciphers survive app restarts
-          generate_session_locally: true,
-          client_type: 'IOS' as any // use IOS to bypass IP restrictions for streaming
-        });
+        const baseUrl = import.meta.env.DEV ? 'https://corsproxy.io/?https://www.jiosaavn.com/api.php' : 'https://www.jiosaavn.com/api.php';
+        const response = await fetch(`${baseUrl}?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=${currentSong.videoId}`);
+        if (!response.ok) throw new Error('Failed to fetch song details');
+        const data = await response.json();
 
-        const info = await yt.getBasicInfo(currentSong.videoId, { client: 'IOS' });
-        const format = info.chooseFormat({
-          type: 'audio',
-          quality: 'best',
-          format: 'mp4',
-          client: 'IOS' as any
-        });
+        const songInfo = data[currentSong.videoId];
+        if (songInfo && songInfo.media_preview_url) {
+            // jiosaavn media_preview_url provides a 96kbps preview stream URL.
+            // We can magically upgrade this directly to full 320kbps CDN stream.
+            let highestQuality = songInfo.media_preview_url;
+            highestQuality = highestQuality.replace('preview.saavncdn.com', 'aac.saavncdn.com');
+            highestQuality = highestQuality.replace('_96_p.mp4', '_320.mp4');
 
-        if (!format) {
-          console.error("No suitable audio format found");
-          return;
-        }
-
-        let rawUrl = format.url;
-        if (!rawUrl) {
-          try {
-            rawUrl = await format.decipher(yt.session.player);
-          } catch (e) {
-            console.error("Decipher failed:", e);
-          }
-        }
-
-        if (rawUrl) {
-           // We route the raw URL through our local Service Worker to bypass CORS
-           setStreamUrl(`/proxy-stream?url=${encodeURIComponent(rawUrl)}`);
+            setStreamUrl(highestQuality);
         } else {
-           console.error("Could not extract raw URL");
+          console.error('Failed to extract stream URL from JioSaavn');
         }
       } catch (err) {
         console.error("Error fetching stream URL:", err);

@@ -19,11 +19,11 @@ import { motion } from 'framer-motion';
 // Mock Data
 // We need real video IDs for streaming to work. Let's map mock data to some real NCS video ids to make them work if clicked.
 const discoverSongs = [
-  { videoId: 'K4DyBUG242c', title: 'KAMALI (Ultra Slowe...', artist: 'Akhmedov', thumbnailUrl: 'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?auto=format&fit=crop&q=80&w=150' },
-  { videoId: 'p7ZsBPK656s', title: 'EL CONTROL (Ultra ...', artist: 'M4GN', thumbnailUrl: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=150' },
-  { videoId: 'J2X5mJ3HDYE', title: 'Sem Tempo (Super S...', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=150' },
-  { videoId: 'gJe3LpXg2eE', title: 'Sem Tempo', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=150' },
-  { videoId: 'AOeY-nDp7hI', title: 'MONTAGEM - PR...', artist: 'SCARIONIX', thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'Z_1L8tH_', title: 'Shape of You', artist: 'Ed Sheeran', thumbnailUrl: 'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'n1zE8b1_', title: 'Blinding Lights', artist: 'The Weeknd', thumbnailUrl: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=150' },
+  { videoId: '6_jE8_wM', title: 'Dance Monkey', artist: 'Tones And I', thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'U_zE8x9_', title: 'Someone You Loved', artist: 'Lewis Capaldi', thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=150' },
+  { videoId: 'P_jE8z1_', title: 'Watermelon Sugar', artist: 'Harry Styles', thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=150' },
 ];
 
 const recommendedPlaylists = [
@@ -160,14 +160,14 @@ const HomeTab = () => {
   );
 };
 
-import { useYouTubeSearch } from './hooks/useYouTubeSearch';
+import { useJioSaavnSearch } from './hooks/useJioSaavnSearch';
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
     const { playSong } = useMusic();
-    const { search, isSearching, error } = useYouTubeSearch();
+    const { search, isSearching, error } = useJioSaavnSearch();
 
     const handleSearch = async (overrideQuery?: string) => {
         const q = overrideQuery || query;
