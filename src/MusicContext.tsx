@@ -38,8 +38,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [streamUrl, setStreamUrl] = useState('');
-
   const safePlay = async () => {
     if (!audioRef.current) return;
     try {
@@ -57,63 +55,20 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    const fetchStreamUrl = async () => {
-      if (!currentSong) {
-        setStreamUrl('');
-        return;
-      }
-
-      // If we already have the streamUrl from search results, use it
-      if (currentSong.streamUrl) {
-        setStreamUrl(currentSong.streamUrl);
-        return;
-      }
-
-      // Fetch from official jiosaavn api
-      try {
-        const isNative = Capacitor.isNativePlatform();
-        const targetUrl = `https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=${currentSong.videoId}`;
-        const finalUrl = !isNative ? `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}` : targetUrl;
-
-        const response = await fetch(finalUrl);
-        if (!response.ok) throw new Error('Failed to fetch song details');
-        const data = await response.json();
-
-        const songInfo = data[currentSong.videoId];
-        if (songInfo && songInfo.media_preview_url) {
-            // jiosaavn media_preview_url provides a 96kbps preview stream URL.
-            // We can magically upgrade this directly to full 320kbps CDN stream.
-            let highestQuality = songInfo.media_preview_url;
-            highestQuality = highestQuality.replace('preview.saavncdn.com', 'aac.saavncdn.com');
-            highestQuality = highestQuality.replace('_96_p.mp4', '_320.mp4');
-
-            setStreamUrl(highestQuality);
-        } else {
-          console.error('Failed to extract stream URL from JioSaavn');
-        }
-      } catch (err) {
-        console.error("Error fetching stream URL:", err);
-      }
-    };
-
-    fetchStreamUrl();
-  }, [currentSong]);
-
-  useEffect(() => {
-    if (audioRef.current && streamUrl) {
+    if (audioRef.current && currentSong?.streamUrl) {
       if (isPlaying) {
         safePlay();
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, currentSong?.streamUrl]);
 
   useEffect(() => {
-    if (audioRef.current && streamUrl) {
+    if (audioRef.current && currentSong?.streamUrl) {
       audioRef.current.load();
     }
-  }, [streamUrl]);
+  }, [currentSong?.streamUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -139,6 +94,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioRef.current.pause();
     }
     setCurrentSong(song);
+    setCurrentTime(0); // Reset seeker
     if (newQueue) {
       setQueue(newQueue);
     } else if (queue.length === 0) {
@@ -162,6 +118,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioRef.current.pause();
       }
       setCurrentSong(queue[currentIndex + 1]);
+      setCurrentTime(0); // Reset seeker
       setIsPlaying(true);
     }
   };
@@ -174,6 +131,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioRef.current.pause();
       }
       setCurrentSong(queue[currentIndex - 1]);
+      setCurrentTime(0); // Reset seeker
       setIsPlaying(true);
     }
   };
@@ -204,7 +162,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
       <audio
         ref={audioRef}
-        src={streamUrl}
+        src={currentSong?.streamUrl || ''}
         playsInline={true}
         onLoadStart={() => console.log('1. Audio: Load Started')}
         onLoadedMetadata={() => console.log('2. Audio: Metadata Loaded')}
@@ -216,7 +174,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         onStalled={() => console.warn('Audio: Stalled (Network issue)')}
         onError={(e) => {
           console.error('Audio Tag Fatal Error:', e.currentTarget.error);
-          console.log('Failed URL:', streamUrl);
+          console.log('Failed URL:', currentSong?.streamUrl);
         }}
       />
     </MusicContext.Provider>

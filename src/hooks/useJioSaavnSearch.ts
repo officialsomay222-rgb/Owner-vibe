@@ -73,11 +73,24 @@ export const useJioSaavnSearch = () => {
             artistName = song.subtitle;
         }
 
+        let streamUrl = '';
+        if (song.media_preview_url) {
+            let qualityUrl = song.media_preview_url.replace('preview.saavncdn.com', 'aac.saavncdn.com');
+            qualityUrl = qualityUrl.replace(/_96(\.mp4|\.m4a|\.mp3)$/, '_320$1');
+            streamUrl = qualityUrl;
+        } else if (song.more_info?.vlink) {
+             streamUrl = song.more_info.vlink;
+        } else if (song.more_info?.encrypted_media_url) {
+             // In case there is no preview URL in search, this is a fallback.
+             // Normally this shouldn't happen with the current search endpoint format.
+        }
+
         return {
           videoId: song.id, // Using JioSaavn ID
           title: song.song || song.title,
           artist: artistName,
           thumbnailUrl: highResThumb,
+          streamUrl: streamUrl,
         };
       });
 
