@@ -161,21 +161,30 @@ const HomeTab = () => {
 };
 
 import { useJioSaavnSearch } from './hooks/useJioSaavnSearch';
+import { useYouTubeSearch } from './hooks/useYouTubeSearch';
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
     const { playSong } = useMusic();
-    const { search, isSearching, error } = useJioSaavnSearch();
+    const { search: searchYouTube, isSearching: isSearchingYouTube } = useYouTubeSearch();
+    const { search: searchJioSaavn, isSearching: isSearchingJioSaavn, error } = useJioSaavnSearch();
+
+    const isSearching = isSearchingYouTube || isSearchingJioSaavn;
 
     const handleSearch = async (overrideQuery?: string) => {
         const q = overrideQuery || query;
         if (!q.trim()) return;
         setHasSearched(true);
 
-        const data = await search(q);
-        setResults(data);
+        // Fetch from YouTube primary, fallback/combined with JioSaavn
+        const ytData = await searchYouTube(q);
+        setResults(ytData);
+
+        // Optionally, you can also fetch from JioSaavn and merge the results:
+        // const saavnData = await searchJioSaavn(q);
+        // setResults([...ytData, ...saavnData]);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

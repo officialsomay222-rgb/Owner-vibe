@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Song } from './types';
+import { getYouTubeAudioStream } from './utils/youtube';
 
 interface MusicContextType {
   currentSong: Song | null;
@@ -89,21 +90,36 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [queue, currentSong]);
 
-  const playSong = (song: Song, newQueue?: Song[]) => {
+  const playSong = async (song: Song, newQueue?: Song[]) => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    setCurrentSong(song);
+
+    // Auto expand the player when playing a new song
+    setIsExpanded(true);
     setCurrentTime(0); // Reset seeker
+
+    // If streamUrl is not present (e.g. from YouTube search), fetch it!
+    if (!song.streamUrl && song.videoId) {
+      try {
+        const streamUrl = await getYouTubeAudioStream(song.videoId);
+        if (streamUrl) {
+          song.streamUrl = streamUrl;
+        } else {
+            console.error("Failed to find suitable stream URL");
+        }
+      } catch (err) {
+        console.error("Failed to fetch youtube stream:", err);
+      }
+    }
+
+    setCurrentSong(song);
     if (newQueue) {
       setQueue(newQueue);
     } else if (queue.length === 0) {
       setQueue([song]);
     }
     setIsPlaying(true);
-
-    // Auto expand the player when playing a new song
-    setIsExpanded(true);
   };
 
   const togglePlayPause = () => {
