@@ -72,8 +72,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Fetch from official jiosaavn api
       try {
         const isNative = Capacitor.isNativePlatform();
-        const baseUrl = !isNative ? 'https://corsproxy.io/?https://www.jiosaavn.com/api.php' : 'https://www.jiosaavn.com/api.php';
-        const response = await fetch(`${baseUrl}?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=${currentSong.videoId}`);
+        const targetUrl = `https://www.jiosaavn.com/api.php?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=${currentSong.videoId}`;
+        const finalUrl = !isNative ? `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}` : targetUrl;
+
+        const response = await fetch(finalUrl);
         if (!response.ok) throw new Error('Failed to fetch song details');
         const data = await response.json();
 

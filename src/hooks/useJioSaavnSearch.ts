@@ -22,8 +22,7 @@ export const useJioSaavnSearch = () => {
 
       if (!isNative) {
          console.log('Fetching via proxy on Web...');
-         // Use corsproxy.io as it handles JSON directly unlike allorigins which requires JSONP/contents extraction
-         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
          const response = await fetch(proxyUrl);
          if (!response.ok) throw new Error(`Proxy Error: ${response.statusText}`);
 
