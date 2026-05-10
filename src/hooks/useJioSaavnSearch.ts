@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { decryptUrl } from '../utils/jiosaavn';
 
 export const useJioSaavnSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
@@ -74,15 +75,23 @@ export const useJioSaavnSearch = () => {
         }
 
         let streamUrl = '';
-        if (song.media_preview_url) {
-            let qualityUrl = song.media_preview_url.replace('preview.saavncdn.com', 'aac.saavncdn.com');
-            qualityUrl = qualityUrl.replace(/_96(\.mp4|\.m4a|\.mp3)$/, '_320$1');
-            streamUrl = qualityUrl;
-        } else if (song.more_info?.vlink) {
-             streamUrl = song.more_info.vlink;
-        } else if (song.more_info?.encrypted_media_url) {
-             // In case there is no preview URL in search, this is a fallback.
-             // Normally this shouldn't happen with the current search endpoint format.
+        if (song.more_info?.encrypted_media_url) {
+            let decryptedUrl = decryptUrl(song.more_info.encrypted_media_url);
+            if (decryptedUrl) {
+                // Get the 320kbps format directly by replacing '_96'
+                streamUrl = decryptedUrl.replace('_96', '_320');
+            }
+        }
+
+        // Fallback to previous logic if encrypted_media_url is not present or decryption fails
+        if (!streamUrl) {
+            if (song.media_preview_url) {
+                let qualityUrl = song.media_preview_url.replace('preview.saavncdn.com', 'aac.saavncdn.com');
+                qualityUrl = qualityUrl.replace(/_96(\.mp4|\.m4a|\.mp3)$/, '_320$1');
+                streamUrl = qualityUrl;
+            } else if (song.more_info?.vlink) {
+                 streamUrl = song.more_info.vlink;
+            }
         }
 
         return {
