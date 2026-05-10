@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Song } from './types';
 
 interface MusicContextType {
@@ -70,7 +71,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Fetch from official jiosaavn api
       try {
-        const baseUrl = import.meta.env.DEV ? 'https://corsproxy.io/?https://www.jiosaavn.com/api.php' : 'https://www.jiosaavn.com/api.php';
+        const isNative = Capacitor.isNativePlatform();
+        const baseUrl = !isNative ? 'https://corsproxy.io/?https://www.jiosaavn.com/api.php' : 'https://www.jiosaavn.com/api.php';
         const response = await fetch(`${baseUrl}?__call=song.getDetails&cc=in&_marker=0%3F_marker%3D0&_format=json&pids=${currentSong.videoId}`);
         if (!response.ok) throw new Error('Failed to fetch song details');
         const data = await response.json();
