@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 export const useJioSaavnSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
@@ -16,26 +17,20 @@ export const useJioSaavnSearch = () => {
       // AllOrigins JSONP wrapper
       const targetUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&n=10&p=1&_marker=0&ctx=web6dot0&q=${encodeURIComponent(query)}`;
 
-      const isDev = import.meta.env.DEV;
       let data;
+      const isNative = Capacitor.isNativePlatform();
 
-      if (isDev) {
-         console.log('Fetching via proxy in DEV...');
-         // Using allorigins GET wrapper since it usually works for CORS
-         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+      if (!isNative) {
+         console.log('Fetching via proxy on Web...');
+         // Use corsproxy.io as it handles JSON directly unlike allorigins which requires JSONP/contents extraction
+         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
          const response = await fetch(proxyUrl);
          if (!response.ok) throw new Error(`Proxy Error: ${response.statusText}`);
 
-         const proxyData = await response.json();
-         // allorigins returns the actual JSON string in the 'contents' field
-         if (proxyData.contents) {
-            data = JSON.parse(proxyData.contents);
-         } else {
-            throw new Error('Invalid proxy response');
-         }
+         data = await response.json();
       } else {
-          // Native fetch for Capacitor Prod
-          console.log('Fetching natively in PROD...');
+          // Native fetch for Capacitor Prod/Dev
+          console.log('Fetching natively...');
           const response = await fetch(targetUrl);
           if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
           data = await response.json();
@@ -90,24 +85,6 @@ export const useJioSaavnSearch = () => {
       return results;
     } catch (err: any) {
       console.error('Search error:', err);
-      // Fallback to mock data in DEV if proxy fails completely
-      if (import.meta.env.DEV) {
-          console.log('Fallback to mock dev data');
-          return [
-              {
-                  videoId: "mock1",
-                  title: "Shape of You",
-                  artist: "Ed Sheeran",
-                  thumbnailUrl: "https://c.saavncdn.com/673/Shape-Of-You-Instrumental-2024-20231127092330-500x500.jpg"
-              },
-              {
-                  videoId: "mock2",
-                  title: "Shape Of You (Remix)",
-                  artist: "Ed Sheeran, Zion & Lennox",
-                  thumbnailUrl: "https://c.saavncdn.com/673/Shape-Of-You-Instrumental-2024-20231127092330-500x500.jpg"
-              }
-          ];
-      }
       setError(err.message || "Failed to search JioSaavn");
       return [];
     } finally {
