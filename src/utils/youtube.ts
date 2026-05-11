@@ -1,14 +1,21 @@
-import type { Song } from '../types';
+import type { Song, SearchResultItem } from '../types';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
 /**
- * Searches YouTube Music for a given query using the Verome API and maps it to the generic Song type.
+ * Searches YouTube Music for a given query using the Verome API and maps it to a unified SearchResultItem type.
  */
-export async function searchYouTubeMusic(query: string): Promise<Song[]> {
+export async function searchYouTubeMusic(query: string, filter: string = 'songs'): Promise<SearchResultItem[]> {
   try {
     const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(`${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}&filter=songs`);
+    let url = `${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}`;
+
+    // Verome API uses empty filter or omits filter for 'All'
+    if (filter && filter.toLowerCase() !== 'all') {
+        url += `&filter=${encodeURIComponent(filter.toLowerCase())}`;
+    }
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Search failed with status: ${response.status}`);
@@ -20,14 +27,22 @@ export async function searchYouTubeMusic(query: string): Promise<Song[]> {
       return [];
     }
 
-    const songs: Song[] = [];
+    const items: SearchResultItem[] = [];
 
     for (const item of data.results) {
-      if (!item.videoId || !item.title) continue;
+      if (!item.title) continue;
 
       const title = item.title;
-      // Get the first artist name, fallback to Unknown Artist
-      const artist = (item.artists && item.artists.length > 0) ? item.artists[0].name : 'Unknown Artist';
+      // Get the first artist name, fallback to Unknown Artist for songs/albums
+      // For artists themselves, they usually don't have an artists array, the title is their name.
+      let artist = 'Unknown Artist';
+      if (item.artists && item.artists.length > 0) {
+          artist = item.artists.map((a: any) => a.name).join(', ');
+      } else if (item.resultType === 'artist') {
+          artist = 'Artist';
+      } else if (item.author) {
+          artist = item.author;
+      }
 
       let thumbnailUrl = '';
       if (item.thumbnails && item.thumbnails.length > 0) {
@@ -35,12 +50,22 @@ export async function searchYouTubeMusic(query: string): Promise<Song[]> {
         thumbnailUrl = item.thumbnails[item.thumbnails.length - 1].url;
       }
 
-      // Use fallback videoId if provided (as standard in Verome-API for better playback stability)
-      const finalVideoId = item.fallbackVideoId || item.videoId;
+      const type = item.resultType || 'song';
+      let id = '';
+
+      if (type === 'song' || type === 'video') {
+         id = item.fallbackVideoId || item.videoId;
+      } else {
+         id = item.browseId || item.playlistId;
+      }
+
+      if (!id) continue;
+
       const finalTitle = item.fallbackTitle || title;
 
-      songs.push({
-        videoId: finalVideoId,
+      items.push({
+        type: type,
+        id: id,
         title: finalTitle,
         artist: artist,
         thumbnailUrl: thumbnailUrl,
@@ -48,7 +73,7 @@ export async function searchYouTubeMusic(query: string): Promise<Song[]> {
       });
     }
 
-    return songs;
+    return items;
   } catch (err) {
     console.error('Failed to search via Verome API:', err);
     return [];
