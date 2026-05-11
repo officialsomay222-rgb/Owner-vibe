@@ -15,6 +15,11 @@ export async function getYouTube(): Promise<Innertube> {
   innertubeInstance = await Innertube.create({
     cache: new UniversalCache(true),
     generate_session_locally: true,
+    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+      // CapacitorHttp intercepts window.fetch, so using the browser's default fetch
+      // here ensures native requests are proxied via Capacitor without CORS issues.
+      return fetch(input, init);
+    }
   });
 
   return innertubeInstance;
@@ -89,30 +94,9 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     // We specifically use 'IOS' client_type for streaming to avoid signature/URL issues
     const info = await yt.getBasicInfo(videoId, { client: 'IOS' });
 
-    // Filter formats for audio only, preferably m4a/mp4
-    const audioFormats = info.streaming_data?.adaptive_formats?.filter(
-        format => format.has_audio && !format.has_video
-    ) || [];
-
-    if (audioFormats.length === 0) {
-        return null;
-    }
-
-    // Sort by highest bitrate, prioritizing MP4 (m4a)
-    const sortedFormats = audioFormats.sort((a, b) => {
-        // Prefer mp4a (m4a) over webm
-        const aIsMp4 = a.mime_type.includes('mp4a');
-        const bIsMp4 = b.mime_type.includes('mp4a');
-
-        if (aIsMp4 && !bIsMp4) return -1;
-        if (!aIsMp4 && bIsMp4) return 1;
-
-        // If same container, sort by bitrate
-        return (b.bitrate || 0) - (a.bitrate || 0);
-    });
-
-    const bestFormat = sortedFormats[0];
-    return bestFormat?.url || null;
+    const format = info.chooseFormat({ type: 'audio', quality: 'best' });
+    const url = format?.decipher(yt.session.player);
+    return url || null;
 
   } catch (err) {
     console.error(`Failed to get YouTube audio stream for ${videoId}:`, err);

@@ -1,15 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, MoreVertical, Heart, Share2 } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2 } from 'lucide-react';
 import { useMusic } from './MusicContext';
 
 export const MusicPlayer = () => {
   const {
     currentSong, isExpanded, setIsExpanded, isPlaying,
-    togglePlayPause, playNext, playPrevious, currentTime, duration, seekTo
+    togglePlayPause, playNext, playPrevious, currentTime, duration, seekTo,
+    isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef
   } = useMusic();
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    if (currentSong) {
+      const favoritesStr = localStorage.getItem('favorites');
+      if (favoritesStr) {
+        const favorites = JSON.parse(favoritesStr);
+        setIsFavorite(favorites.some((s: any) => s.videoId === currentSong.videoId));
+      } else {
+        setIsFavorite(false);
+      }
+    }
+  }, [currentSong]);
+
+  const toggleFavorite = () => {
+    if (!currentSong) return;
+    const favoritesStr = localStorage.getItem('favorites') || '[]';
+    let favorites = JSON.parse(favoritesStr);
+
+    if (isFavorite) {
+      favorites = favorites.filter((s: any) => s.videoId !== currentSong.videoId);
+    } else {
+      favorites.push(currentSong);
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    setIsFavorite(!isFavorite);
+  };
+
+  const handleShare = async () => {
+    if (!currentSong) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Listening to ${currentSong.title}`,
+          text: `Check out ${currentSong.title} by ${currentSong.artist} on Owner Vibe!`,
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${currentSong.title} by ${currentSong.artist}`);
+        alert('Song info copied to clipboard!');
+      }
+    } catch (err) {
+      console.log('Error sharing:', err);
+    }
+  };
+
+  const toggleMute = () => {
+      if (audioRef.current) {
+          audioRef.current.muted = !isMuted;
+          setIsMuted(!isMuted);
+      }
+  };
 
   if (!currentSong) return null;
 
@@ -93,8 +148,11 @@ export const MusicPlayer = () => {
                     {currentSong.artist}
                   </motion.p>
                 </div>
-                <button className="p-2 text-white/70 hover:text-rose-500 transition-colors">
-                  <Heart className="w-7 h-7" />
+                <button
+                  onClick={toggleFavorite}
+                  className={`p-2 transition-colors ${isFavorite ? 'text-rose-500' : 'text-white/70 hover:text-rose-500'}`}
+                >
+                  <Heart className="w-7 h-7" fill={isFavorite ? 'currentColor' : 'none'} />
                 </button>
               </div>
 
@@ -120,7 +178,10 @@ export const MusicPlayer = () => {
 
               {/* Controls */}
               <div className="flex items-center justify-between px-2">
-                <button className="p-2 text-white/50 hover:text-white transition-colors">
+                <button
+                  onClick={toggleShuffle}
+                  className={`p-2 transition-colors ${isShuffle ? 'text-[#00d2ff]' : 'text-white/50 hover:text-white'}`}
+                >
                   <Shuffle className="w-6 h-6" />
                 </button>
                 <button
@@ -145,15 +206,25 @@ export const MusicPlayer = () => {
                 >
                   <SkipForward className="w-10 h-10 fill-current" />
                 </button>
-                <button className="p-2 text-white/50 hover:text-white transition-colors">
+                <button
+                  onClick={toggleRepeat}
+                  className={`p-2 transition-colors relative ${repeatMode !== 'none' ? 'text-[#00d2ff]' : 'text-white/50 hover:text-white'}`}
+                >
                   <Repeat className="w-6 h-6" />
+                  {repeatMode === 'one' && (
+                      <span className="absolute text-[8px] font-bold -top-1 -right-1 bg-[#00d2ff] text-black rounded-full w-3 h-3 flex items-center justify-center">1</span>
+                  )}
                 </button>
               </div>
 
               {/* Bottom Actions */}
-              <div className="flex justify-center space-x-8 pt-4 pb-2 text-white/50">
-                <Volume2 className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
-                <Share2 className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />
+              <div className="flex justify-center items-center space-x-8 pt-4 pb-2 text-white/50">
+                <button onClick={toggleMute} className="hover:text-white transition-colors">
+                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+                <button onClick={handleShare} className="hover:text-white transition-colors">
+                  <Share2 className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>
