@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.ownervibe.app',
   appName: 'Owner Vibe',
   webDir: 'dist',
+  server: {
+    url: 'https://owner-vibe.vercel.app/',
+    cleartext: true
+  },
   plugins: {
     CapacitorHttp: {
       enabled: true,
