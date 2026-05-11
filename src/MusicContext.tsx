@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { Song } from './types';
 import { getYouTubeAudioStream } from './utils/youtube';
+import { MediaSession } from '@capgo/capacitor-media-session';
 
 interface MusicContextType {
   currentSong: Song | null;
@@ -65,8 +66,20 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (audioRef.current && currentSong?.streamUrl) {
       if (isPlaying) {
         safePlay();
+        MediaSession.setPlaybackState({ playbackState: 'playing' });
+        MediaSession.setPositionState({
+          position: audioRef.current.currentTime,
+          duration: audioRef.current.duration || 0,
+          playbackRate: audioRef.current.playbackRate || 1
+        });
       } else {
         audioRef.current.pause();
+        MediaSession.setPlaybackState({ playbackState: 'paused' });
+        MediaSession.setPositionState({
+          position: audioRef.current.currentTime,
+          duration: audioRef.current.duration || 0,
+          playbackRate: audioRef.current.playbackRate || 1
+        });
       }
     }
   }, [isPlaying, currentSong?.streamUrl]);
@@ -77,12 +90,74 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [currentSong?.streamUrl]);
 
+  // Sync Media Session Metadata
+  useEffect(() => {
+    if (currentSong) {
+      // Extract high resolution image by rewriting standard YouTube thumbnail URLs
+      // e.g. "w60-h60-l90-rj" -> "w500-h500-l90-rj"
+      let highResArtUrl = currentSong.thumbnailUrl;
+      if (highResArtUrl) {
+        highResArtUrl = highResArtUrl.replace(/=w\d+-h\d+/, '=w500-h500');
+      }
+
+      MediaSession.setMetadata({
+        title: currentSong.title,
+        artist: currentSong.artist || 'Unknown Artist',
+        album: 'Owner Vibe',
+        artwork: [
+          {
+            src: highResArtUrl || '',
+            sizes: '500x500',
+            type: 'image/jpeg'
+          }
+        ]
+      });
+    }
+  }, [currentSong]);
+
+  // Bind Native Media Session Actions
+  useEffect(() => {
+    MediaSession.setActionHandler({ action: 'play' }, () => {
+      setIsPlaying(true);
+    });
+
+    MediaSession.setActionHandler({ action: 'pause' }, () => {
+      setIsPlaying(false);
+    });
+
+    MediaSession.setActionHandler({ action: 'nexttrack' }, () => {
+      playNext();
+    });
+
+    MediaSession.setActionHandler({ action: 'previoustrack' }, () => {
+      playPrevious();
+    });
+
+    MediaSession.setActionHandler({ action: 'seekto' }, (details) => {
+      if (details && typeof details.seekTime === 'number') {
+        seekTo(details.seekTime);
+      }
+    });
+
+    // We don't remove action handlers here as we want them always bound.
+    // In @capgo/capacitor-media-session, subsequent calls overwrite the handlers.
+  }, [queue, currentSong, repeatMode, isShuffle, isPlaying, duration]); // dependencies to ensure handlers use latest state via closures (especially playNext/playPrevious)
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    const updateDuration = () => {
+        setDuration(audio.duration);
+        MediaSession.setPositionState({
+            position: audio.currentTime,
+            duration: audio.duration || 0,
+            playbackRate: audio.playbackRate
+        });
+    };
     const handleEnded = () => {
         if (repeatMode === 'one') {
             audio.currentTime = 0;
@@ -219,6 +294,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
+      MediaSession.setPositionState({
+        position: time,
+        duration: audioRef.current.duration || 0,
+        playbackRate: audioRef.current.playbackRate || 1
+      });
     }
   };
 
