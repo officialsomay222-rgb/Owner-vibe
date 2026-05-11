@@ -13,7 +13,9 @@ export async function getYouTube(): Promise<Innertube> {
   }
 
   innertubeInstance = await Innertube.create({
-    cache: new UniversalCache(true),
+    // Using an explicit cache or false prevents 'LOGIN_REQUIRED'/'Streaming data not available' errors
+    // which occur when the default UniversalCache saves a bad session state.
+    cache: new UniversalCache(false),
     generate_session_locally: true,
     fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
       // CapacitorHttp intercepts window.fetch, so using the browser's default fetch
@@ -26,59 +28,53 @@ export async function getYouTube(): Promise<Innertube> {
 }
 
 /**
- * Searches YouTube Music for a given query and maps it to the generic Song type.
+ * Searches YouTube for a given query and maps it to the generic Song type.
  */
 export async function searchYouTubeMusic(query: string): Promise<Song[]> {
   try {
     const yt = await getYouTube();
 
-    // We search youtube music
-    const search = await yt.music.search(query, { type: 'song' });
+    // We use standard youtube search because yt.music.search frequently returns empty content
+    // or requires complex parsing that breaks easily depending on the query/client.
+    const search = await yt.search(query);
 
-    if (!search.contents || search.contents.length === 0) {
+    if (!search.videos || search.videos.length === 0) {
       return [];
     }
 
-    // `contents` is typically an array of Sections, and each Section has `contents`
-    // We only care about the first one with music items
     const songs: Song[] = [];
 
-    // Fallback if type is song, the array structure may be direct
-    const results = search.contents.flatMap(section =>
-        // @ts-ignore
-        section.contents || []
-    );
+    for (const videoItem of search.videos) {
+      // Cast to any to bypass strict union type checking from youtubei.js
+      const video = videoItem as any;
+      if (!video.id || !video.title) continue;
 
-    for (const item of results) {
-        // @ts-ignore
-        if (item.type === 'MusicResponsiveListItem' || item.type === 'MusicTwoRowItem') {
-            const videoId = item.id;
-            const title = item.title;
-            const artist = item.author?.name || item.authors?.[0]?.name || 'Unknown Artist';
-            const duration = item.duration?.text || '';
-            const thumbnails = item.thumbnails || item.thumbnail?.contents || [];
+      const videoId = video.id as string;
+      const title = video.title?.text || (typeof video.title === 'string' ? video.title : 'Unknown Title');
+      const artist = video.author?.name || 'Unknown Artist';
+      const duration = video.duration?.text || '';
+      const thumbnails = video.thumbnails || [];
 
-            // Get the best thumbnail
-            let thumbnailUrl = '';
-            if (thumbnails.length > 0) {
-                thumbnailUrl = thumbnails[thumbnails.length - 1].url;
-            }
+      // Get the best thumbnail
+      let thumbnailUrl = '';
+      if (thumbnails.length > 0) {
+        thumbnailUrl = thumbnails[thumbnails.length - 1].url;
+      }
 
-            if (videoId && title) {
-                songs.push({
-                    videoId: videoId,
-                    title: title,
-                    artist: artist,
-                    thumbnailUrl: thumbnailUrl,
-                    duration: duration
-                });
-            }
-        }
+      if (videoId && title) {
+        songs.push({
+          videoId: videoId,
+          title: title,
+          artist: artist,
+          thumbnailUrl: thumbnailUrl,
+          duration: duration
+        });
+      }
     }
 
     return songs;
   } catch (err) {
-    console.error('Failed to search YouTube Music:', err);
+    console.error('Failed to search YouTube:', err);
     return [];
   }
 }
@@ -95,7 +91,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     const info = await yt.getBasicInfo(videoId, { client: 'IOS' });
 
     const format = info.chooseFormat({ type: 'audio', quality: 'best' });
-    const url = format?.decipher(yt.session.player);
+    const url = await format?.decipher(yt.session.player);
     return url || null;
 
   } catch (err) {
