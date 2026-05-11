@@ -38,19 +38,6 @@ const scarionixAlbums = [
   { id: 3, img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=200' },
 ];
 
-const searchHistory = [
-    "South movie",
-    "Pk movie",
-    "dil pe zakham khate hain",
-    "Indila",
-    "sem tempo",
-    "Ari ari punk",
-    "Ari ari",
-    "Aah aah porn",
-    "montagem perigosa",
-    "Iun na praca"
-];
-
 const Header = ({ isVisible }: { isVisible: boolean }) => (
   <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 pt-safe bg-black/60 backdrop-blur-[40px] transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
     <div className="flex items-center space-x-1 pl-1">
@@ -161,23 +148,80 @@ const HomeTab = () => {
 };
 
 import { useYouTubeSearch } from './hooks/useYouTubeSearch';
+import type { SearchResultItem } from './types';
+import { fetchPlaylistDetails, fetchAlbumDetails, fetchArtistDetails, DetailsData } from './utils/veromeApi';
+import type { Song } from './types';
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<SearchResultItem[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
+    const [activeFilter, setActiveFilter] = useState('All');
+
+    // Search history using local storage hook
+    const [searchHistory, setSearchHistory] = useLocalStorage<string[]>('searchHistory', []);
+
+    // Details View State
+    const [detailsView, setDetailsView] = useState<DetailsData | null>(null);
+    const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+
     const { playSong } = useMusic();
     const { search: searchYouTube, isSearching: isSearchingYouTube } = useYouTubeSearch();
 
     const isSearching = isSearchingYouTube;
 
-    const handleSearch = async (overrideQuery?: string) => {
+    const handleItemClick = async (item: SearchResultItem) => {
+        if (item.type === 'song' || item.type === 'video') {
+            const currentQueue: Song[] = results
+                .filter(r => r.type === 'song' || r.type === 'video')
+                .map(r => ({ videoId: r.id, title: r.title, artist: r.artist, thumbnailUrl: r.thumbnailUrl, duration: r.duration }));
+
+            playSong({ videoId: item.id, title: item.title, artist: item.artist, thumbnailUrl: item.thumbnailUrl, duration: item.duration }, currentQueue);
+        } else {
+            setIsFetchingDetails(true);
+            let data: DetailsData | null = null;
+            if (item.type === 'playlist') {
+                data = await fetchPlaylistDetails(item.id);
+            } else if (item.type === 'album') {
+                data = await fetchAlbumDetails(item.id);
+            } else if (item.type === 'artist') {
+                data = await fetchArtistDetails(item.id);
+            }
+            setIsFetchingDetails(false);
+            if (data) {
+                setDetailsView(data);
+            }
+        }
+    };
+
+    const saveSearchToHistory = (q: string) => {
+        const trimmed = q.trim();
+        if (!trimmed) return;
+        setSearchHistory((prev: string[]) => {
+            const filtered = prev.filter(item => item.toLowerCase() !== trimmed.toLowerCase());
+            return [trimmed, ...filtered].slice(0, 15);
+        });
+    };
+
+    const clearHistory = () => {
+        setSearchHistory([]);
+    };
+
+    const removeHistoryItem = (itemToRemove: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSearchHistory((prev: string[]) => prev.filter(item => item !== itemToRemove));
+    };
+
+    const handleSearch = async (overrideQuery?: string, overrideFilter?: string) => {
         const q = overrideQuery || query;
         if (!q.trim()) return;
+
+        saveSearchToHistory(q);
         setHasSearched(true);
 
+        const filterToUse = overrideFilter || activeFilter;
         // Fetch from YouTube primary
-        const ytData = await searchYouTube(q);
+        const ytData = await searchYouTube(q, filterToUse);
         setResults(ytData);
     };
 
@@ -187,10 +231,54 @@ const SearchTab = () => {
         }
     };
 
+    if (detailsView) {
+        return (
+            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
+                <button onClick={() => setDetailsView(null)} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
+                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
+                    <span className="font-medium">Back</span>
+                </button>
+
+                <div className="flex flex-col items-center text-center mb-8">
+                    <div className="w-40 h-40 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)] mb-4">
+                        <img src={detailsView.thumbnail} alt={detailsView.title} className="w-full h-full object-cover" />
+                    </div>
+                    <h2 className="text-[22px] font-extrabold text-white light:text-black leading-tight mb-1">{detailsView.title}</h2>
+                    <span className="text-[15px] font-medium text-[#888] light:text-gray-500">{detailsView.artist} • {detailsView.tracks.length} tracks</span>
+                </div>
+
+                <div className="flex flex-col space-y-3">
+                    {detailsView.tracks.map((track, i) => (
+                        <div key={i} onClick={() => playSong(track, detailsView.tracks)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.05] light:hover:bg-black/[0.05] group cursor-pointer transition-all duration-300">
+                            <div className="flex items-center space-x-4">
+                                <span className="text-[#666] light:text-gray-400 font-medium w-4 text-right text-[13px]">{i + 1}</span>
+                                <div className="relative w-12 h-12 rounded-md overflow-hidden shrink-0">
+                                    <img src={track.thumbnailUrl || detailsView.thumbnail} alt={track.title} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col max-w-[180px]">
+                                    <span className="text-white/95 light:text-gray-900 text-[15px] font-bold tracking-wide leading-tight line-clamp-1">{track.title}</span>
+                                    <span className="text-[#888] light:text-gray-500 text-[13px] font-medium line-clamp-1 mt-0.5">{track.artist}</span>
+                                </div>
+                            </div>
+                            {track.duration && (
+                                <div className="text-[#888] light:text-gray-500 text-[12px] font-medium shrink-0">
+                                    {track.duration}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-8 tracking-tight pl-1">Search</h2>
-            <div className="relative mb-8 group">
+            <div className="relative mb-4 group">
                 <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
                     <Search className="w-5 h-5 text-[#888] group-focus-within:text-[#00d2ff] light:text-gray-500 light:group-focus-within:text-blue-500 transition-colors duration-300" />
                 </div>
@@ -210,12 +298,35 @@ const SearchTab = () => {
                 </div>
             </div>
 
+            {hasSearched && (
+                <div className="flex overflow-x-auto space-x-3 no-scrollbar pb-4 mb-2 -mx-5 px-5">
+                    {['All', 'Songs', 'Videos', 'Albums', 'Artists', 'Playlists'].map((filter) => (
+                        <button
+                            key={filter}
+                            onClick={() => {
+                                setActiveFilter(filter);
+                                handleSearch(query, filter);
+                            }}
+                            className={`flex-none px-5 py-2 rounded-full text-[14px] font-bold tracking-wide transition-all duration-300 border ${
+                                activeFilter === filter
+                                    ? 'bg-[#00d2ff] text-black border-[#00d2ff] shadow-[0_4px_15px_rgba(0,210,255,0.3)] light:bg-blue-600 light:text-white light:border-blue-600 light:shadow-[0_4px_15px_rgba(37,99,235,0.3)] scale-105'
+                                    : 'bg-white/[0.05] text-[#ccc] border-white/[0.1] hover:bg-white/[0.1] hover:border-white/[0.15] light:bg-black/[0.05] light:text-gray-700 light:border-black/[0.1] light:hover:bg-black/[0.08] active:scale-95'
+                            }`}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {!hasSearched ? (
                 <>
-                    <div className="flex items-center justify-between mb-4 pl-1">
-                        <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
-                        <button className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
-                    </div>
+                    {searchHistory.length > 0 && (
+                        <div className="flex items-center justify-between mb-4 pl-1">
+                            <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
+                            <button onClick={clearHistory} className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
+                        </div>
+                    )}
 
                     <div className="flex flex-col space-y-1">
                         {searchHistory.map((item, i) => (
@@ -225,7 +336,7 @@ const SearchTab = () => {
                                     <span className="text-[16px] text-[#ccc] light:text-gray-700 font-medium tracking-wide group-hover:text-white light:group-hover:text-black transition-colors">{item}</span>
                                 </div>
                                 <div className="flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <X className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" />
+                                    <X onClick={(e) => removeHistoryItem(item, e)} className="w-5 h-5 text-[#555] light:text-gray-400 hover:text-red-400 light:hover:text-red-500 transition-colors cursor-pointer" />
                                     <ArrowUpLeft className="w-[22px] h-[22px] text-[#555] light:text-gray-400 hover:text-[#00d2ff] light:hover:text-blue-500 transition-colors cursor-pointer" />
                                 </div>
                             </div>
@@ -234,7 +345,7 @@ const SearchTab = () => {
                 </>
             ) : (
                 <div className="flex flex-col">
-                    {isSearching ? (
+                    {isSearching || isFetchingDetails ? (
                         <div className="flex items-center justify-center py-10">
                             <div className="w-8 h-8 border-4 border-[#00d2ff] border-t-transparent rounded-full animate-spin"></div>
                         </div>
@@ -243,7 +354,7 @@ const SearchTab = () => {
                             {results.map((item, i) => (
                                 <div
                                     key={i}
-                                    onClick={() => playSong(item, results)}
+                                    onClick={() => handleItemClick(item)}
                                     className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.03] light:hover:bg-black/[0.03] group cursor-pointer transition-all duration-300"
                                 >
                                     <div className="flex items-center space-x-4">
