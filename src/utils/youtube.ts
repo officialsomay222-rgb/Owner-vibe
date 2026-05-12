@@ -47,7 +47,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
       let thumbnailUrl = '';
       if (item.thumbnails && item.thumbnails.length > 0) {
         // Fallback to the largest/last thumbnail if possible
-        thumbnailUrl = item.thumbnails[item.thumbnails.length - 1].url;
+        thumbnailUrl = item.thumbnails[item.thumbnails.length - 1].url.replace(/=w\d+-h\d+-l90-rj/, '=w1080-h1080-l90-rj').replace(/=w\d+-h\d+$/, '=w1080-h1080');
       }
 
       const type = item.resultType || 'song';

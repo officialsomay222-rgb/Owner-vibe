@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2 } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Download, Info } from 'lucide-react';
 import { useMusic } from './MusicContext';
+import { useColor } from 'color-thief-react';
 
 export const MusicPlayer = () => {
   const {
@@ -13,6 +14,7 @@ export const MusicPlayer = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     if (currentSong) {
@@ -25,6 +27,13 @@ export const MusicPlayer = () => {
       }
     }
   }, [currentSong]);
+
+  // We use a CORS proxy to allow color-thief to read the image on web without tainting the canvas
+  const corsProxiedUrl = currentSong?.thumbnailUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(currentSong.thumbnailUrl)}` : '';
+  const { data: color, loading } = useColor(corsProxiedUrl, 'hex', { crossOrigin: 'anonymous' });
+
+  // Use the extracted color or fallback
+  const dominantColor = color && !loading ? color : '#3b82f6'; // default blue
 
   const toggleFavorite = () => {
     if (!currentSong) return;
@@ -50,13 +59,24 @@ export const MusicPlayer = () => {
           text: `Check out ${currentSong.title} by ${currentSong.artist} on Owner Vibe!`,
         });
       } else {
-        // Fallback to clipboard
         await navigator.clipboard.writeText(`${currentSong.title} by ${currentSong.artist}`);
         alert('Song info copied to clipboard!');
       }
     } catch (err) {
       console.log('Error sharing:', err);
     }
+  };
+
+  const handleDownload = () => {
+    if (!currentSong || !audioRef.current?.src) {
+        alert("Cannot download this song right now.");
+        return;
+    }
+    const a = document.createElement('a');
+    a.href = audioRef.current.src;
+    a.download = `${currentSong.title}.m4a`;
+    a.click();
+    setShowMenu(false);
   };
 
   const toggleMute = () => {
@@ -87,147 +107,211 @@ export const MusicPlayer = () => {
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-          className="fixed inset-0 z-[100] bg-black text-white flex flex-col items-center overflow-hidden will-change-transform"
-          style={{ willChange: 'transform' }}
+          className="fixed inset-0 z-[100] text-white flex flex-col items-center overflow-hidden will-change-transform"
+          style={{
+            willChange: 'transform',
+            background: `linear-gradient(to bottom, ${dominantColor}55, #000000)` // dynamic background
+          }}
         >
-          {/* Blurred Background */}
+          {/* Blurred Background with Dynamic Color */}
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-40 blur-xl scale-150 transition-all duration-1000 will-change-transform"
-            style={{ backgroundImage: `url(${currentSong.thumbnailUrl})`, willChange: 'transform, filter' }}
+            className="absolute inset-0 bg-cover bg-center opacity-40 blur-[40px] scale-125 transition-all duration-1000"
+            style={{
+                backgroundImage: `url(${currentSong.thumbnailUrl})`,
+                filter: 'brightness(0.7) blur(30px)',
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black" />
+          <div className="absolute inset-0 bg-black/60" />
 
           {/* Header */}
-          <div className="relative z-10 w-full flex items-center justify-between px-6 py-6 pt-12">
+          <div className="relative w-full flex items-center justify-between px-6 pt-safe pb-4 mt-4">
             <button
               onClick={() => setIsExpanded(false)}
-              className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 -ml-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
             >
               <ChevronDown className="w-8 h-8" />
             </button>
-            <span className="text-xs font-bold tracking-widest text-white/70 uppercase">Now Playing</span>
-            <button className="p-2 -mr-2 hover:bg-white/10 rounded-full transition-colors">
+            <span className="text-sm font-medium tracking-widest text-white/80">NOW PLAYING</span>
+            <button
+              onClick={() => setShowMenu(true)}
+              className="p-2 -mr-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
+            >
               <MoreVertical className="w-6 h-6" />
             </button>
           </div>
 
           {/* Main Content */}
-          <div className="relative z-10 flex-1 w-full max-w-md flex flex-col px-8 pb-10 justify-between">
-
-            {/* Artwork */}
+          <div className="relative flex-1 w-full max-w-md flex flex-col px-8 pb-10 mt-6">
+            {/* Album Art */}
             <motion.div
-              className="w-full aspect-square rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] mt-4 relative"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+              className="w-full aspect-square rounded-[32px] overflow-hidden shadow-2xl mb-10"
+              style={{
+                boxShadow: `0 20px 50px -10px ${dominantColor}88` // Dynamic glow
+              }}
+              whileTap={{ scale: 0.95 }}
             >
               <img
                 src={currentSong.thumbnailUrl}
                 alt={currentSong.title}
                 className="w-full h-full object-cover"
+                crossOrigin="anonymous" // needed for color extraction if done directly, but we use proxy above. still good practice
               />
             </motion.div>
 
-            <div className="flex flex-col space-y-8 mt-10">
-              {/* Info */}
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col overflow-hidden">
-                  <motion.h2
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    className="text-2xl font-bold text-white truncate pr-4"
-                  >
-                    {currentSong.title}
-                  </motion.h2>
-                  <motion.p
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="text-white/60 text-lg truncate"
-                  >
-                    {currentSong.artist}
-                  </motion.p>
-                </div>
-                <button
-                  onClick={toggleFavorite}
-                  className={`p-2 transition-colors ${isFavorite ? 'text-rose-500' : 'text-white/70 hover:text-rose-500'}`}
-                >
-                  <Heart className="w-7 h-7" fill={isFavorite ? 'currentColor' : 'none'} />
-                </button>
+            {/* Song Info */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex-1 overflow-hidden">
+                <h2 className="text-2xl font-bold truncate mb-1 text-white">{currentSong.title}</h2>
+                <p className="text-lg text-white/60 truncate">{currentSong.artist}</p>
               </div>
+              <button
+                onClick={toggleFavorite}
+                className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
+              >
+                <Heart
+                  className={`w-7 h-7 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
+                />
+              </button>
+            </div>
 
-              {/* Progress */}
-              <div className="flex flex-col space-y-2">
+            {/* Premium Seek Bar */}
+            <div className="mb-10 w-full group">
+              <div className="relative w-full h-2 bg-white/20 rounded-full flex items-center">
+                <div
+                    className="absolute h-full rounded-full transition-all"
+                    style={{
+                        width: `${(currentTime / duration) * 100 || 0}%`,
+                        backgroundColor: dominantColor,
+                        boxShadow: `0 0 10px ${dominantColor}`
+                    }}
+                />
                 <input
                   type="range"
-                  min="0"
-                  max={duration || 100}
-                  value={currentTime}
+                  min={0}
+                  max={duration || 0}
+                  value={currentTime || 0}
                   onChange={handleSeek}
                   onMouseDown={() => setIsDragging(true)}
                   onMouseUp={() => setIsDragging(false)}
                   onTouchStart={() => setIsDragging(true)}
                   onTouchEnd={() => setIsDragging(false)}
-                  className="w-full h-1.5 bg-white/20 rounded-full appearance-none outline-none accent-[#00d2ff]"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <div className="flex justify-between text-xs text-white/50 font-medium">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
+                <div
+                    className="absolute h-4 w-4 rounded-full shadow-lg scale-0 group-hover:scale-100 transition-transform"
+                    style={{
+                        left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)`,
+                        backgroundColor: '#fff'
+                    }}
+                />
               </div>
-
-              {/* Controls */}
-              <div className="flex items-center justify-between px-2">
-                <button
-                  onClick={toggleShuffle}
-                  className={`p-2 transition-colors ${isShuffle ? 'text-[#00d2ff]' : 'text-white/50 hover:text-white'}`}
-                >
-                  <Shuffle className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={playPrevious}
-                  className="p-3 text-white hover:text-[#00d2ff] transition-colors active:scale-95"
-                >
-                  <SkipBack className="w-10 h-10 fill-current" />
-                </button>
-                <button
-                  onClick={togglePlayPause}
-                  className="w-20 h-20 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-10 h-10 fill-black" />
-                  ) : (
-                    <Play className="w-10 h-10 fill-black ml-2" />
-                  )}
-                </button>
-                <button
-                  onClick={playNext}
-                  className="p-3 text-white hover:text-[#00d2ff] transition-colors active:scale-95"
-                >
-                  <SkipForward className="w-10 h-10 fill-current" />
-                </button>
-                <button
-                  onClick={toggleRepeat}
-                  className={`p-2 transition-colors relative ${repeatMode !== 'none' ? 'text-[#00d2ff]' : 'text-white/50 hover:text-white'}`}
-                >
-                  <Repeat className="w-6 h-6" />
-                  {repeatMode === 'one' && (
-                      <span className="absolute text-[8px] font-bold -top-1 -right-1 bg-[#00d2ff] text-black rounded-full w-3 h-3 flex items-center justify-center">1</span>
-                  )}
-                </button>
-              </div>
-
-              {/* Bottom Actions */}
-              <div className="flex justify-center items-center space-x-8 pt-4 pb-2 text-white/50">
-                <button onClick={toggleMute} className="hover:text-white transition-colors">
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-                <button onClick={handleShare} className="hover:text-white transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
+              <div className="flex justify-between text-xs font-medium text-white/50 mt-3 px-1">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
               </div>
             </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between mb-8 px-2">
+              <button
+                onClick={toggleShuffle}
+                className={`p-3 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
+                style={{ color: isShuffle ? dominantColor : undefined }}
+              >
+                <Shuffle className="w-6 h-6" />
+              </button>
+
+              <button
+                onClick={playPrevious}
+                className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+              >
+                <SkipBack className="w-10 h-10 fill-current" />
+              </button>
+
+              <button
+                onClick={togglePlayPause}
+                className="p-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl"
+                style={{ backgroundColor: dominantColor, color: '#fff' }}
+              >
+                {isPlaying ? (
+                  <Pause className="w-10 h-10 fill-current" />
+                ) : (
+                  <Play className="w-10 h-10 fill-current translate-x-1" />
+                )}
+              </button>
+
+              <button
+                onClick={playNext}
+                className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+              >
+                <SkipForward className="w-10 h-10 fill-current" />
+              </button>
+
+              <button
+                onClick={toggleRepeat}
+                className={`p-3 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
+                style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
+              >
+                <Repeat className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Volume & Extras */}
+            <div className="flex items-center justify-between px-6 text-white/50">
+                <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
+                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+                <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
+                    <Share2 className="w-5 h-5" />
+                </button>
+            </div>
           </div>
+        </motion.div>
+      )}
+
+      {/* 3-Dot Menu Bottom Sheet Modal */}
+      {showMenu && (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setShowMenu(false)}
+        >
+            <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="w-full bg-[#1c1c1c] rounded-t-[32px] pb-safe"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-4" />
+                <div className="p-6 pt-2">
+                    <div className="flex items-center mb-6 pb-6 border-b border-white/10">
+                        <img src={currentSong.thumbnailUrl} alt="Thumbnail" className="w-16 h-16 rounded-xl object-cover mr-4" />
+                        <div>
+                            <h3 className="text-white font-bold text-lg truncate w-60">{currentSong.title}</h3>
+                            <p className="text-white/50 text-sm">{currentSong.artist}</p>
+                        </div>
+                    </div>
+
+                    <button onClick={toggleFavorite} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white">
+                        <Heart className={`w-6 h-6 mr-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white/80'}`} />
+                        <span className="text-lg font-medium">Add to Favorites</span>
+                    </button>
+
+                    <button onClick={handleDownload} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">
+                        <Download className="w-6 h-6 mr-4 text-white/80" />
+                        <span className="text-lg font-medium">Download Song</span>
+                    </button>
+
+                    <button onClick={handleShare} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">
+                        <Share2 className="w-6 h-6 mr-4 text-white/80" />
+                        <span className="text-lg font-medium">Share</span>
+                    </button>
+                </div>
+            </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
