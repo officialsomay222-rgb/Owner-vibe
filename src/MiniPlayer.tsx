@@ -9,6 +9,7 @@ export const MiniPlayer = () => {
   if (!currentSong || isExpanded) return null;
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const mediumResThumb = currentSong?.thumbnailUrl?.replace(/=w\d+-h\d+/, '=w120-h120') || currentSong?.thumbnailUrl;
 
   return (
     <AnimatePresence>
@@ -21,12 +22,12 @@ export const MiniPlayer = () => {
       >
         <div
           onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-lg active:scale-[0.98] transition-transform"
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
         >
           {/* Progress Bar Line */}
           <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
             <div
-              className="h-full bg-[#00d2ff] transition-all duration-100 ease-linear"
+              className="h-full bg-white/80 transition-all duration-100 ease-linear"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -34,7 +35,7 @@ export const MiniPlayer = () => {
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
               <img
-                src={currentSong.thumbnailUrl}
+                src={mediumResThumb}
                 alt={currentSong.title}
                 className="w-full h-full object-cover"
               />
@@ -55,7 +56,7 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 togglePlayPause();
               }}
-              className="p-2 text-white hover:text-[#00d2ff] transition-colors"
+              className="p-2 text-white hover:text-white/80 transition-colors"
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6 fill-current" />
@@ -68,7 +69,7 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
-              className="p-2 text-white hover:text-[#00d2ff] transition-colors"
+              className="p-2 text-white hover:text-white/80 transition-colors"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>

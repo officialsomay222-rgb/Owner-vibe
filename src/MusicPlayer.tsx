@@ -31,6 +31,7 @@ export const MusicPlayer = () => {
   // We use a CORS proxy to allow color-thief to read the image on web without tainting the canvas
   const corsProxiedUrl = currentSong?.thumbnailUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(currentSong.thumbnailUrl)}` : '';
   const { data: color, loading } = useColor(corsProxiedUrl, 'hex', { crossOrigin: 'anonymous' });
+  const highResThumb = currentSong?.thumbnailUrl?.replace(/=w\d+-h\d+/, '=w1080-h1080') || currentSong?.thumbnailUrl;
 
   // Use the extracted color or fallback
   const dominantColor = color && !loading ? color : '#3b82f6'; // default blue
@@ -113,6 +114,16 @@ export const MusicPlayer = () => {
             background: `linear-gradient(180deg, ${dominantColor} 0%, #000000 100%)`,
           }}
         >
+          {/* Dynamic Blur Background */}
+          <div className="absolute inset-0 z-[-1] pointer-events-none overflow-hidden">
+            <img
+                src={highResThumb}
+                alt="blur-bg"
+                className="w-full h-full object-cover blur-2xl opacity-50 scale-125"
+                style={{ willChange: 'transform', transform: 'translateZ(0)' }}
+            />
+          </div>
+
           {/* Smooth Premium Overlay for the gradient */}
           <div
             className="absolute inset-0 pointer-events-none transition-colors duration-1000"
@@ -151,7 +162,7 @@ export const MusicPlayer = () => {
               whileTap={{ scale: 0.95 }}
             >
               <img
-                src={currentSong.thumbnailUrl}
+                src={highResThumb}
                 alt={currentSong.title}
                 className="w-full h-full object-cover"
                 crossOrigin="anonymous" // needed for color extraction if done directly, but we use proxy above. still good practice
@@ -161,8 +172,8 @@ export const MusicPlayer = () => {
             {/* Song Info */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex-1 overflow-hidden">
-                <h2 className="text-2xl font-bold truncate mb-1 text-white">{currentSong.title}</h2>
-                <p className="text-lg text-white/60 truncate">{currentSong.artist}</p>
+                <h2 className="text-3xl font-bold truncate mb-1 text-white">{currentSong.title}</h2>
+                <p className="text-xl text-white/70 truncate">{currentSong.artist}</p>
               </div>
               <button
                 onClick={toggleFavorite}
@@ -210,7 +221,7 @@ export const MusicPlayer = () => {
                     style={{
                         left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)`,
                         backgroundColor: '#fff',
-                        boxShadow: `0 2px 8px rgba(0,0,0,0.4), 0 0 10px ${dominantColor}88`
+                        boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 12px ${dominantColor}`
                     }}
                 >
                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dominantColor }} />
