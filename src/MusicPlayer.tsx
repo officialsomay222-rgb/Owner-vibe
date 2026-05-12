@@ -110,18 +110,18 @@ export const MusicPlayer = () => {
           className="fixed inset-0 z-[100] text-white flex flex-col items-center overflow-hidden will-change-transform"
           style={{
             willChange: 'transform',
-            background: `linear-gradient(to bottom, ${dominantColor}55, #000000)` // dynamic background
+            background: `linear-gradient(180deg, ${dominantColor} 0%, #000000 100%)`,
           }}
         >
-          {/* Blurred Background with Dynamic Color */}
+          {/* Smooth Premium Overlay for the gradient */}
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-40 blur-[40px] scale-125 transition-all duration-1000"
+            className="absolute inset-0 pointer-events-none transition-colors duration-1000"
             style={{
-                backgroundImage: `url(${currentSong.thumbnailUrl})`,
-                filter: 'brightness(0.7) blur(30px)',
+              background: `radial-gradient(circle at 50% -20%, ${dominantColor}40 0%, transparent 60%), linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 50%, #000000 100%)`
             }}
           />
-          <div className="absolute inset-0 bg-black/60" />
+
+          {/* Removed the heavy blur image completely for a much cleaner Spotify/Apple Music gradient look */}
 
           {/* Header */}
           <div className="relative w-full flex items-center justify-between px-6 pt-safe pb-4 mt-4">
@@ -176,15 +176,21 @@ export const MusicPlayer = () => {
 
             {/* Premium Seek Bar */}
             <div className="mb-10 w-full group">
-              <div className="relative w-full h-2 bg-white/20 rounded-full flex items-center">
+              <div
+                className="relative w-full h-[6px] bg-white/20 rounded-full flex items-center transition-all duration-300 ease-out group-hover:h-2"
+              >
+                {/* Buffered track (optional if added later, skipping for now to focus on premium styling) */}
+
+                {/* Active Progress */}
                 <div
-                    className="absolute h-full rounded-full transition-all"
+                    className={`absolute h-full rounded-full ${isDragging ? '' : 'transition-all duration-200 ease-linear'}`}
                     style={{
                         width: `${(currentTime / duration) * 100 || 0}%`,
                         backgroundColor: dominantColor,
-                        boxShadow: `0 0 10px ${dominantColor}`
+                        boxShadow: `0 0 12px ${dominantColor}B3` // Subtle glow
                     }}
                 />
+
                 <input
                   type="range"
                   min={0}
@@ -195,19 +201,25 @@ export const MusicPlayer = () => {
                   onMouseUp={() => setIsDragging(false)}
                   onTouchStart={() => setIsDragging(true)}
                   onTouchEnd={() => setIsDragging(false)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
+
+                {/* Thumb */}
                 <div
-                    className="absolute h-4 w-4 rounded-full shadow-lg scale-0 group-hover:scale-100 transition-transform"
+                    className={`absolute h-4 w-4 rounded-full shadow-md z-0 transition-transform duration-200 ease-out flex items-center justify-center ${isDragging ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
                     style={{
                         left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)`,
-                        backgroundColor: '#fff'
+                        backgroundColor: '#fff',
+                        boxShadow: `0 2px 8px rgba(0,0,0,0.4), 0 0 10px ${dominantColor}88`
                     }}
-                />
+                >
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dominantColor }} />
+                </div>
               </div>
-              <div className="flex justify-between text-xs font-medium text-white/50 mt-3 px-1">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+
+              <div className="flex justify-between text-xs font-semibold text-white/60 tracking-wider mt-3 px-1">
+                <span className="font-mono">{formatTime(currentTime)}</span>
+                <span className="font-mono">{formatTime(duration)}</span>
               </div>
             </div>
 

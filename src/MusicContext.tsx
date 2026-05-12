@@ -183,25 +183,12 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioRef.current.pause();
     }
 
-    // Auto expand the player when playing a new song
+    // Instantly update UI with the new song data before fetching stream
     setIsExpanded(true);
-    setCurrentTime(0); // Reset seeker
-
-    // If streamUrl is not present (e.g. from YouTube search), fetch it!
-    if (!song.streamUrl && song.videoId) {
-      try {
-        const streamUrl = await getYouTubeAudioStream(song.videoId);
-        if (streamUrl) {
-          song.streamUrl = streamUrl;
-        } else {
-            console.error("Failed to find suitable stream URL");
-        }
-      } catch (err) {
-        console.error("Failed to fetch youtube stream:", err);
-      }
-    }
-
+    setCurrentTime(0);
     setCurrentSong(song);
+    setIsPlaying(true);
+
     if (newQueue) {
       setOriginalQueue(newQueue);
       if (isShuffle) {
@@ -216,7 +203,27 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setOriginalQueue([song]);
       setQueue([song]);
     }
-    setIsPlaying(true);
+
+    // If streamUrl is not present (e.g. from YouTube search), fetch it in the background
+    if (!song.streamUrl && song.videoId) {
+      try {
+        const streamUrl = await getYouTubeAudioStream(song.videoId);
+        if (streamUrl) {
+          // Update the current song reference with the new stream URL
+          // We use functional state update to ensure we don't overwrite if the user skipped while loading
+          setCurrentSong((prev) => {
+            if (prev && prev.videoId === song.videoId) {
+              return { ...prev, streamUrl };
+            }
+            return prev;
+          });
+        } else {
+            console.error("Failed to find suitable stream URL");
+        }
+      } catch (err) {
+        console.error("Failed to fetch youtube stream:", err);
+      }
+    }
   };
 
   const togglePlayPause = () => {
