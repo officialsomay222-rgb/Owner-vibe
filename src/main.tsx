@@ -5,15 +5,10 @@ import './index.css';
 import { MusicProvider } from './MusicContext.tsx';
 import GlobalErrorCatcher from './components/GlobalErrorCatcher.tsx';
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
-    }, (err) => {
-      console.log('ServiceWorker registration failed: ', err);
-    });
-  });
-}
+// vite-plugin-pwa automatically handles registration with registerType: 'autoUpdate'
+// However, we can use the virtual module to explicitly register if needed.
+// For now, the plugin injects the registration script automatically,
+// so we just remove the old manual sw.js registration.
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
