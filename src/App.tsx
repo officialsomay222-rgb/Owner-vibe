@@ -15,6 +15,7 @@ import { useMusic } from './MusicContext';
 import { MusicPlayer } from './MusicPlayer';
 import { MiniPlayer } from './MiniPlayer';
 import { motion } from 'framer-motion';
+import logoNav from './assets/logo_nav.jpg';
 
 // Mock Data
 // We need real video IDs for streaming to work. Let's map mock data to some real NCS video ids to make them work if clicked.
@@ -781,11 +782,10 @@ export default function App() {
             if (tab.isCustom) {
               return (
                 <button key="center-play" className="flex flex-col items-center justify-center -mt-12 group focus:outline-none outline-none relative z-10 w-20">
-                  <div className="relative flex items-center justify-center w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-[#00d2ff] via-[#3a7bd5] to-[#8a2be2] shadow-[0_8px_32px_rgba(0,210,255,0.4)] group-hover:shadow-[0_12px_40px_rgba(138,43,226,0.6)] group-hover:scale-[1.05] group-active:scale-[0.95] transition-all duration-400 border-[4px] border-[#0a0a0a] light:border-white">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="translate-x-[2px] drop-shadow-lg">
-                      <path d="M22 2L11 13" />
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z" fill="white" fillOpacity="0.3" />
-                    </svg>
+                  <div className="relative flex items-center justify-center w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 shadow-[0_8px_32px_rgba(0,210,255,0.4)] group-hover:shadow-[0_12px_40px_rgba(138,43,226,0.6)] group-hover:scale-[1.05] group-active:scale-[0.95] transition-all duration-400 p-[3px] border-none">
+                    <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-[#0a0a0a] light:border-white relative bg-black flex items-center justify-center">
+                        <img src={logoNav} alt="Logo" className="w-full h-full object-cover scale-[1.2]" />
+                    </div>
                   </div>
                 </button>
               )
