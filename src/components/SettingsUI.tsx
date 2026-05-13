@@ -7,6 +7,7 @@ export const Toggle = ({ enabled, onChange, label, description }: { enabled: boo
             {description && <span className="text-[13px] text-[#888] light:text-gray-500 mt-0.5">{description}</span>}
         </div>
         <button
+            aria-label={label}
             onClick={() => onChange(!enabled)}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enabled ? 'bg-[#00d2ff] light:bg-blue-500' : 'bg-white/20 light:bg-black/10'}`}
         >

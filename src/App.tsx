@@ -98,6 +98,7 @@ const HomeTab = () => {
                             </div>
                         </div>
                         <button
+                            aria-label="Clear search"
                             onClick={(e) => { e.stopPropagation(); }}
                             className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90"
                         >
@@ -481,7 +482,7 @@ const LibraryTab = () => {
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
         <div className="flex items-center justify-between mb-8 pl-1">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Library</h2>
-            <button className="p-2.5 bg-white/[0.05] light:bg-black/[0.03] border border-white/[0.06] light:border-black/5 rounded-full text-white light:text-gray-900 hover:bg-white/[0.1] light:hover:bg-black/[0.06] active:scale-95 transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.3)] light:shadow-sm mt-1">
+            <button aria-label="Create playlist" className="p-2.5 bg-white/[0.05] light:bg-black/[0.03] border border-white/[0.06] light:border-black/5 rounded-full text-white light:text-gray-900 hover:bg-white/[0.1] light:hover:bg-black/[0.06] active:scale-95 transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.3)] light:shadow-sm mt-1">
                 <Plus className="w-[22px] h-[22px]" />
             </button>
         </div>
@@ -858,7 +859,7 @@ export default function App() {
           {tabs.map((tab) => {
             if (tab.isCustom) {
               return (
-                <button key="center-play" className="flex flex-col items-center justify-center -mt-12 group focus:outline-none outline-none relative z-10 w-20">
+                <button aria-label="Now playing" key="center-play" className="flex flex-col items-center justify-center -mt-12 group focus:outline-none outline-none relative z-10 w-20">
                   <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-purple-500 to-blue-500 rounded-full blur-xl opacity-60 animate-pulse pointer-events-none -z-10 mix-blend-screen light:mix-blend-multiply"></div>
                   <div className="relative flex items-center justify-center w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 shadow-[0_8px_32px_rgba(0,210,255,0.4)] group-hover:shadow-[0_12px_40px_rgba(138,43,226,0.6)] group-hover:scale-[1.05] group-active:scale-[0.95] transition-all duration-400 p-[3px] border-none">
                     <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-[#0a0a0a] light:border-white relative bg-black flex items-center justify-center">

@@ -52,6 +52,7 @@ export const MiniPlayer = () => {
 
           <div className="flex items-center space-x-2 shrink-0 pr-2">
             <button
+              aria-label={isPlaying ? "Pause" : "Play"}
               onClick={(e) => {
                 e.stopPropagation();
                 togglePlayPause();
@@ -65,6 +66,7 @@ export const MiniPlayer = () => {
               )}
             </button>
             <button
+              aria-label="Next track"
               onClick={(e) => {
                 e.stopPropagation();
                 playNext();
