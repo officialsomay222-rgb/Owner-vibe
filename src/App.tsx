@@ -390,15 +390,92 @@ const SearchTab = () => {
 
 const LibraryTab = () => {
     const [activeSection, setActiveSection] = useState('Playlists');
+    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites'>('main');
 
     // Using mock data for demonstration
-    const { playSong } = useMusic();
+    const { playSong, playHistory, favorites } = useMusic();
     const myPlaylists = [
         { id: 1, title: 'Gym Motivation', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200', views: '398 MILLION VIEWS' },
         { id: 2, title: 'Late Night Vibes', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200' },
         { id: 3, title: 'Chill Lo-Fi', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=200' },
         { id: 4, title: 'Workout Mix', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=200' },
     ];
+
+    if (libraryView === 'history') {
+        return (
+            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
+                <button onClick={() => setLibraryView('main')} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
+                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
+                    <span className="font-medium">Back</span>
+                </button>
+                <div className="flex items-center justify-between mb-8 pl-1">
+                    <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Recently Played</h2>
+                </div>
+                <div className="flex flex-col space-y-3">
+                    {playHistory.map((track, i) => (
+                        <div key={i} onClick={() => playSong(track, playHistory)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.05] light:hover:bg-black/[0.05] group cursor-pointer transition-all duration-300">
+                            <div className="flex items-center space-x-4">
+                                <span className="text-[#666] light:text-gray-400 font-medium w-4 text-right text-[13px]">{i + 1}</span>
+                                <div className="relative w-12 h-12 rounded-md overflow-hidden shrink-0">
+                                    <img src={track.thumbnailUrl} alt={track.title} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col max-w-[180px]">
+                                    <span className="text-white/95 light:text-gray-900 text-[15px] font-bold tracking-wide leading-tight line-clamp-1">{track.title}</span>
+                                    <span className="text-[#888] light:text-gray-500 text-[13px] font-medium line-clamp-1 mt-0.5">{track.artist}</span>
+                                </div>
+                            </div>
+                            {track.duration && (
+                                <div className="text-[#888] light:text-gray-500 text-[12px] font-medium shrink-0">
+                                    {track.duration}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (libraryView === 'favorites') {
+        return (
+            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
+                <button onClick={() => setLibraryView('main')} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
+                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
+                    <span className="font-medium">Back</span>
+                </button>
+                <div className="flex items-center justify-between mb-8 pl-1">
+                    <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Favorites</h2>
+                </div>
+                <div className="flex flex-col space-y-3">
+                    {favorites.map((track, i) => (
+                        <div key={i} onClick={() => playSong(track, favorites)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.05] light:hover:bg-black/[0.05] group cursor-pointer transition-all duration-300">
+                            <div className="flex items-center space-x-4">
+                                <span className="text-[#666] light:text-gray-400 font-medium w-4 text-right text-[13px]">{i + 1}</span>
+                                <div className="relative w-12 h-12 rounded-md overflow-hidden shrink-0">
+                                    <img src={track.thumbnailUrl} alt={track.title} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col max-w-[180px]">
+                                    <span className="text-white/95 light:text-gray-900 text-[15px] font-bold tracking-wide leading-tight line-clamp-1">{track.title}</span>
+                                    <span className="text-[#888] light:text-gray-500 text-[13px] font-medium line-clamp-1 mt-0.5">{track.artist}</span>
+                                </div>
+                            </div>
+                            {track.duration && (
+                                <div className="text-[#888] light:text-gray-500 text-[12px] font-medium shrink-0">
+                                    {track.duration}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
@@ -435,14 +512,14 @@ const LibraryTab = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-5 mb-8">
-           <div className="flex flex-col cursor-pointer group">
+           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('history')}>
                <div className="w-full aspect-square bg-gradient-to-br from-orange-500/10 to-orange-500/5 light:from-orange-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-orange-500/20 light:border-orange-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-orange-500/40 light:group-hover:border-orange-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
                    <div className="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                    <History className="w-[42px] h-[42px] text-orange-500 light:text-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
                </div>
                <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Recently Played</span>
            </div>
-           <div className="flex flex-col cursor-pointer group">
+           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('favorites')}>
                <div className="w-full aspect-square bg-gradient-to-br from-rose-500/10 to-rose-500/5 light:from-rose-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-rose-500/20 light:border-rose-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-rose-500/40 light:group-hover:border-rose-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
                    <div className="absolute inset-0 bg-gradient-to-t from-rose-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                    <Heart className="w-[42px] h-[42px] text-rose-500 light:text-rose-500 fill-rose-500/20 light:fill-rose-500/20 drop-shadow-[0_0_15px_rgba(244,63,94,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />

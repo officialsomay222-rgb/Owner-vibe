@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { Song } from './types';
 import { getYouTubeAudioStream } from './utils/youtube';
 import { MediaSession } from '@capgo/capacitor-media-session';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 interface MusicContextType {
   currentSong: Song | null;
@@ -21,6 +22,9 @@ interface MusicContextType {
   seekTo: (time: number) => void;
   setIsExpanded: (expanded: boolean) => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  playHistory: Song[];
+  favorites: Song[];
+  toggleFavorite: (song: Song) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -43,6 +47,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isExpanded, setIsExpanded] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
+  const [playHistory, setPlayHistory] = useLocalStorage<Song[]>('playHistory', []);
+  const [favorites, setFavorites] = useLocalStorage<Song[]>('favorites', []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -179,6 +185,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [queue, currentSong, repeatMode]);
 
   const playSong = async (song: Song, newQueue?: Song[]) => {
+    setPlayHistory((prev: Song[]) => {
+      const filtered = prev.filter(s => s.videoId !== song.videoId);
+      return [song, ...filtered].slice(0, 50);
+    });
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -289,6 +300,17 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
   };
 
+  const toggleFavorite = (song: Song) => {
+    setFavorites((prev: Song[]) => {
+      const isFav = prev.some(s => s.videoId === song.videoId);
+      if (isFav) {
+        return prev.filter(s => s.videoId !== song.videoId);
+      } else {
+        return [song, ...prev];
+      }
+    });
+  };
+
   const toggleRepeat = () => {
       setRepeatMode(prev => {
           if (prev === 'none') return 'all';
@@ -327,7 +349,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       repeatMode,
       toggleShuffle,
       toggleRepeat,
-      audioRef
+      audioRef,
+      playHistory,
+      favorites,
+      toggleFavorite
     }}>
       {children}
       <audio

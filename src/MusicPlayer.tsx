@@ -8,25 +8,21 @@ export const MusicPlayer = () => {
   const {
     currentSong, isExpanded, setIsExpanded, isPlaying,
     togglePlayPause, playNext, playPrevious, currentTime, duration, seekTo,
-    isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef
+    isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
+    favorites, toggleFavorite
   } = useMusic();
 
   const [isDragging, setIsDragging] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => {
+  const isFavorite = currentSong ? favorites.some(s => s.videoId === currentSong.videoId) : false;
+
+  const handleToggleFavorite = () => {
     if (currentSong) {
-      const favoritesStr = localStorage.getItem('favorites');
-      if (favoritesStr) {
-        const favorites = JSON.parse(favoritesStr);
-        setIsFavorite(favorites.some((s: any) => s.videoId === currentSong.videoId));
-      } else {
-        setIsFavorite(false);
-      }
+      toggleFavorite(currentSong);
     }
-  }, [currentSong]);
+  };
 
   // We use a CORS proxy to allow color-thief to read the image on web without tainting the canvas
   const corsProxiedUrl = currentSong?.thumbnailUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(currentSong.thumbnailUrl)}` : '';
@@ -35,21 +31,6 @@ export const MusicPlayer = () => {
 
   // Use the extracted color or fallback
   const dominantColor = color && !loading ? color : '#3b82f6'; // default blue
-
-  const toggleFavorite = () => {
-    if (!currentSong) return;
-    const favoritesStr = localStorage.getItem('favorites') || '[]';
-    let favorites = JSON.parse(favoritesStr);
-
-    if (isFavorite) {
-      favorites = favorites.filter((s: any) => s.videoId !== currentSong.videoId);
-    } else {
-      favorites.push(currentSong);
-    }
-
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    setIsFavorite(!isFavorite);
-  };
 
   const handleShare = async () => {
     if (!currentSong) return;
@@ -176,7 +157,7 @@ export const MusicPlayer = () => {
                 <p className="text-xl text-white/70 truncate">{currentSong.artist}</p>
               </div>
               <button
-                onClick={toggleFavorite}
+                onClick={handleToggleFavorite}
                 className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
               >
                 <Heart
@@ -319,9 +300,9 @@ export const MusicPlayer = () => {
                         </div>
                     </div>
 
-                    <button onClick={toggleFavorite} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white">
+                    <button onClick={handleToggleFavorite} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white">
                         <Heart className={`w-6 h-6 mr-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white/80'}`} />
-                        <span className="text-lg font-medium">Add to Favorites</span>
+                        <span className="text-lg font-medium">{isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
                     </button>
 
                     <button onClick={handleDownload} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">
