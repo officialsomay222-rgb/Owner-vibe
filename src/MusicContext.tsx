@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { Song } from './types';
-import { getYouTubeAudioStream } from './utils/youtube';
+import { musicService } from './services/MusicService';
 import { MediaSession } from '@capgo/capacitor-media-session';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
@@ -105,7 +105,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
       const fetchStream = async () => {
         try {
-          const streamUrl = await getYouTubeAudioStream(currentSong.videoId);
+          const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
           if (streamUrl) {
             setCurrentSong((prev) => {
               if (prev && prev.videoId === currentSong.videoId) {
