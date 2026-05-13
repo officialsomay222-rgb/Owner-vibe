@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Download, Info } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
+import { Capacitor } from '@capacitor/core';
 
 export const MusicPlayer = () => {
   const {
@@ -25,8 +26,13 @@ export const MusicPlayer = () => {
   };
 
   // We use a CORS proxy to allow color-thief to read the image on web without tainting the canvas
-  const corsProxiedUrl = currentSong?.thumbnailUrl ? `https://api.allorigins.win/raw?url=${encodeURIComponent(currentSong.thumbnailUrl)}` : '';
-  const { data: color, loading } = useColor(corsProxiedUrl, 'hex', { crossOrigin: 'anonymous' });
+  // On native platforms, we can fetch directly.
+  const proxyUrl = currentSong?.thumbnailUrl
+      ? (Capacitor.isNativePlatform()
+          ? currentSong.thumbnailUrl
+          : `https://api.allorigins.win/raw?url=${encodeURIComponent(currentSong.thumbnailUrl)}`)
+      : '';
+  const { data: color, loading } = useColor(proxyUrl, 'hex', { crossOrigin: 'anonymous' });
   const highResThumb = currentSong?.thumbnailUrl?.replace(/=w\d+-h\d+/, '=w1080-h1080') || currentSong?.thumbnailUrl;
 
   // Use the extracted color or fallback
