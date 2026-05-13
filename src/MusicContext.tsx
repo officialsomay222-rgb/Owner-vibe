@@ -90,11 +90,39 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isPlaying, currentSong?.streamUrl]);
 
+  // Explicitly call load only when streamUrl actually changes
+  // We cannot remove this completely because changing src dynamically doesn't
+  // always trigger the new load properly without it, but we MUST NOT do it when
+  // just play/pause toggles.
   useEffect(() => {
     if (audioRef.current && currentSong?.streamUrl) {
       audioRef.current.load();
     }
   }, [currentSong?.streamUrl]);
+
+  // Auto-fetch stream URL for current song if missing
+  useEffect(() => {
+    if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
+      const fetchStream = async () => {
+        try {
+          const streamUrl = await getYouTubeAudioStream(currentSong.videoId);
+          if (streamUrl) {
+            setCurrentSong((prev) => {
+              if (prev && prev.videoId === currentSong.videoId) {
+                return { ...prev, streamUrl };
+              }
+              return prev;
+            });
+          } else {
+              console.error("Failed to find suitable stream URL for", currentSong.videoId);
+          }
+        } catch (err) {
+          console.error("Failed to fetch youtube stream:", err);
+        }
+      };
+      fetchStream();
+    }
+  }, [currentSong]);
 
   // Sync Media Session Metadata
   useEffect(() => {
@@ -215,26 +243,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setQueue([song]);
     }
 
-    // If streamUrl is not present (e.g. from YouTube search), fetch it in the background
-    if (!song.streamUrl && song.videoId) {
-      try {
-        const streamUrl = await getYouTubeAudioStream(song.videoId);
-        if (streamUrl) {
-          // Update the current song reference with the new stream URL
-          // We use functional state update to ensure we don't overwrite if the user skipped while loading
-          setCurrentSong((prev) => {
-            if (prev && prev.videoId === song.videoId) {
-              return { ...prev, streamUrl };
-            }
-            return prev;
-          });
-        } else {
-            console.error("Failed to find suitable stream URL");
-        }
-      } catch (err) {
-        console.error("Failed to fetch youtube stream:", err);
-      }
-    }
   };
 
   const togglePlayPause = () => {
