@@ -2,16 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Download, Info } from 'lucide-react';
 import { useMusic } from './MusicContext';
+import { useAudioTime } from './hooks/useAudioTime';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
 
 export const MusicPlayer = () => {
   const {
     currentSong, isExpanded, setIsExpanded, isPlaying,
-    togglePlayPause, playNext, playPrevious, currentTime, duration, seekTo,
+    togglePlayPause, playNext, playPrevious, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
     favorites, toggleFavorite
   } = useMusic();
+
+  const { currentTime, duration } = useAudioTime(audioRef);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
