@@ -2,9 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipForward } from 'lucide-react';
 import { useMusic } from './MusicContext';
+import { useAudioTime } from './hooks/useAudioTime';
 
 export const MiniPlayer = () => {
-  const { currentSong, isExpanded, setIsExpanded, isPlaying, togglePlayPause, playNext, currentTime, duration } = useMusic();
+  const { currentSong, isExpanded, setIsExpanded, isPlaying, togglePlayPause, playNext, duration, audioRef } = useMusic();
+  const currentTime = useAudioTime(audioRef);
 
   if (!currentSong || isExpanded) return null;
 
