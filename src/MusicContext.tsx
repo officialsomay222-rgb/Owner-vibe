@@ -8,7 +8,8 @@ interface MusicContextType {
   currentSong: Song | null;
   queue: Song[];
   isPlaying: boolean;
-  currentTime: number;
+  // ⚡ OPTIMIZATION: `currentTime` was removed from context to prevent global re-renders
+  // on every timeupdate. It is now tracked locally via the `useAudioTime` hook.
   duration: number;
   isExpanded: boolean;
   isShuffle: boolean;
@@ -42,7 +43,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [originalQueue, setOriginalQueue] = useState<Song[]>([]);
   const [queue, setQueue] = useState<Song[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -181,9 +181,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => {
-      setCurrentTime(audio.currentTime);
-    };
     const updateDuration = () => {
         setDuration(audio.duration);
         MediaSession.setPositionState({
@@ -201,12 +198,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     };
 
-    audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', handleEnded);
 
     return () => {
-      audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
@@ -224,7 +219,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Instantly update UI with the new song data before fetching stream
     setIsExpanded(true);
-    setCurrentTime(0);
     setCurrentSong(song);
     setIsPlaying(true);
 
@@ -257,13 +251,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (currentIndex < queue.length - 1) {
           if (audioRef.current) audioRef.current.pause();
           setCurrentSong(queue[currentIndex + 1]);
-          setCurrentTime(0);
           setIsPlaying(true);
         } else if (repeatMode === 'all') {
           // Loop back to the first song
           if (audioRef.current) audioRef.current.pause();
           setCurrentSong(queue[0]);
-          setCurrentTime(0);
           setIsPlaying(true);
         } else {
           setIsPlaying(false);
@@ -278,13 +270,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentIndex > 0) {
       if (audioRef.current) audioRef.current.pause();
       setCurrentSong(queue[currentIndex - 1]);
-      setCurrentTime(0);
       setIsPlaying(true);
     } else if (repeatMode === 'all') {
       // Go to the last song
       if (audioRef.current) audioRef.current.pause();
       setCurrentSong(queue[queue.length - 1]);
-      setCurrentTime(0);
       setIsPlaying(true);
     }
   };
@@ -330,7 +320,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const seekTo = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setCurrentTime(time);
       MediaSession.setPositionState({
         position: time,
         duration: audioRef.current.duration || 0,
@@ -344,7 +333,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       currentSong,
       queue,
       isPlaying,
-      currentTime,
       duration,
       isExpanded,
       playSong,

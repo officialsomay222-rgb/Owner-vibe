@@ -4,15 +4,17 @@ import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volum
 import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
+import { useAudioTime } from './hooks/useAudioTime';
 
 export const MusicPlayer = () => {
   const {
     currentSong, isExpanded, setIsExpanded, isPlaying,
-    togglePlayPause, playNext, playPrevious, currentTime, duration, seekTo,
+    togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
     favorites, toggleFavorite
   } = useMusic();
 
+  const currentTime = useAudioTime(audioRef);
   const [isDragging, setIsDragging] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
