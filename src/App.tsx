@@ -859,6 +859,7 @@ export default function App() {
             if (tab.isCustom) {
               return (
                 <button key="center-play" className="flex flex-col items-center justify-center -mt-12 group focus:outline-none outline-none relative z-10 w-20">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-purple-500 to-blue-500 rounded-full blur-xl opacity-60 animate-pulse pointer-events-none -z-10 mix-blend-screen light:mix-blend-multiply"></div>
                   <div className="relative flex items-center justify-center w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 shadow-[0_8px_32px_rgba(0,210,255,0.4)] group-hover:shadow-[0_12px_40px_rgba(138,43,226,0.6)] group-hover:scale-[1.05] group-active:scale-[0.95] transition-all duration-400 p-[3px] border-none">
                     <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-[#0a0a0a] light:border-white relative bg-black flex items-center justify-center">
                         <img src={logoNav} alt="Logo" className="w-full h-full object-cover scale-[1.2]" />
@@ -875,11 +876,10 @@ export default function App() {
               <button 
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id!)}
-                className="flex flex-col items-center justify-center space-y-1.5 focus:outline-none w-16 group h-full"
+                className={`flex flex-col items-center justify-center space-y-1.5 focus:outline-none w-16 group h-full active:scale-95 duration-500 ease-out transition-transform ${isActive ? '-translate-y-1' : ''}`}
               >
                 <div className="relative">
                   <Icon className={`w-6 h-6 transition-all duration-400 ease-out ${isActive ? 'text-[#00d2ff] drop-shadow-[0_0_15px_rgba(0,210,255,0.6)] scale-110 light:text-blue-600 light:drop-shadow-[0_0_12px_rgba(37,99,235,0.4)]' : 'text-[#666] group-hover:text-[#aaa] light:text-gray-400 light:group-hover:text-gray-600'}`} />
-                  {isActive && <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#00d2ff] light:bg-blue-600 shadow-[0_0_8px_rgba(0,210,255,0.8)] light:shadow-[0_0_8px_rgba(37,99,235,0.8)]"></div>}
                 </div>
                 <span className={`text-[10px] tracking-widest transition-all duration-400 ease-out uppercase mt-1 ${isActive ? 'text-white font-bold light:text-gray-900' : 'text-[#666] font-semibold group-hover:text-[#aaa] light:text-gray-500 light:group-hover:text-gray-700'}`}>
                   {tab.label}
