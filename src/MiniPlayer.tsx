@@ -21,8 +21,17 @@ export const MiniPlayer = () => {
         className="fixed bottom-[85px] inset-x-2 z-40 max-w-md mx-auto"
       >
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Expand player"
           onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsExpanded(true);
+            }
+          }}
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
         >
           {/* Progress Bar Line */}
           <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
@@ -52,11 +61,12 @@ export const MiniPlayer = () => {
 
           <div className="flex items-center space-x-2 shrink-0 pr-2">
             <button
+              aria-label={isPlaying ? "Pause" : "Play"}
               onClick={(e) => {
                 e.stopPropagation();
                 togglePlayPause();
               }}
-              className="p-2 text-white hover:text-white/80 transition-colors"
+              className="p-2 text-white hover:text-white/80 transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none rounded-full"
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6 fill-current" />
@@ -65,11 +75,12 @@ export const MiniPlayer = () => {
               )}
             </button>
             <button
+              aria-label="Next track"
               onClick={(e) => {
                 e.stopPropagation();
                 playNext();
               }}
-              className="p-2 text-white hover:text-white/80 transition-colors"
+              className="p-2 text-white hover:text-white/80 transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none rounded-full"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>
