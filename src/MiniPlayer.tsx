@@ -4,13 +4,24 @@ import { Play, Pause, SkipForward } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useAudioTime } from './hooks/useAudioTime';
 
+const MiniProgressBar = ({ duration, audioRef }: { duration: number, audioRef: React.RefObject<HTMLAudioElement | null> }) => {
+  const currentTime = useAudioTime(audioRef);
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
+      <div
+        className="h-full bg-white/80 transition-all duration-100 ease-linear"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+};
+
 export const MiniPlayer = () => {
   const { currentSong, isExpanded, setIsExpanded, isPlaying, togglePlayPause, playNext, duration, audioRef } = useMusic();
-  const currentTime = useAudioTime(audioRef);
 
   if (!currentSong || isExpanded) return null;
-
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const mediumResThumb = currentSong?.thumbnailUrl?.replace(/=w\d+-h\d+/, '=w120-h120') || currentSong?.thumbnailUrl;
 
   return (
@@ -27,12 +38,7 @@ export const MiniPlayer = () => {
           className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
         >
           {/* Progress Bar Line */}
-          <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
-            <div
-              className="h-full bg-white/80 transition-all duration-100 ease-linear"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          <MiniProgressBar duration={duration} audioRef={audioRef} />
 
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">

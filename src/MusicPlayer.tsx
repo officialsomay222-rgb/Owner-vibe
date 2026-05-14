@@ -6,6 +6,68 @@ import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
 import { useAudioTime } from './hooks/useAudioTime';
 
+const formatTime = (time: number) => {
+  if (isNaN(time)) return '0:00';
+  const mins = Math.floor(time / 60);
+  const secs = Math.floor(time % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const ProgressBar = ({ duration, dominantColor, seekTo, audioRef }: { duration: number, dominantColor: string, seekTo: (time: number) => void, audioRef: React.RefObject<HTMLAudioElement | null> }) => {
+  const currentTime = useAudioTime(audioRef);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    seekTo(Number(e.target.value));
+  };
+
+  return (
+    <div className="mb-10 w-full group">
+      <div
+        className="relative w-full h-[6px] bg-white/20 rounded-full flex items-center transition-all duration-300 ease-out group-hover:h-2"
+      >
+        <div
+            className={`absolute h-full rounded-full ${isDragging ? '' : 'transition-all duration-200 ease-linear'}`}
+            style={{
+                width: `${(currentTime / duration) * 100 || 0}%`,
+                backgroundColor: dominantColor,
+                boxShadow: `0 0 12px ${dominantColor}B3` // Subtle glow
+            }}
+        />
+
+        <input
+          type="range"
+          min={0}
+          max={duration || 0}
+          value={currentTime || 0}
+          onChange={handleSeek}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => setIsDragging(false)}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={() => setIsDragging(false)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        />
+
+        <div
+            className={`absolute h-4 w-4 rounded-full shadow-md z-0 transition-transform duration-200 ease-out flex items-center justify-center ${isDragging ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
+            style={{
+                left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)`,
+                backgroundColor: '#fff',
+                boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 12px ${dominantColor}`
+            }}
+        >
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dominantColor }} />
+        </div>
+      </div>
+
+      <div className="flex justify-between text-xs font-semibold text-white/60 tracking-wider mt-3 px-1">
+        <span className="font-mono">{formatTime(currentTime)}</span>
+        <span className="font-mono">{formatTime(duration)}</span>
+      </div>
+    </div>
+  );
+};
+
 export const MusicPlayer = () => {
   const {
     currentSong, isExpanded, setIsExpanded, isPlaying,
@@ -14,8 +76,6 @@ export const MusicPlayer = () => {
     favorites, toggleFavorite
   } = useMusic();
 
-  const currentTime = useAudioTime(audioRef);
-  const [isDragging, setIsDragging] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -77,17 +137,6 @@ export const MusicPlayer = () => {
   };
 
   if (!currentSong) return null;
-
-  const formatTime = (time: number) => {
-    if (isNaN(time)) return '0:00';
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    seekTo(Number(e.target.value));
-  };
 
   return (
     <AnimatePresence>
@@ -175,53 +224,7 @@ export const MusicPlayer = () => {
             </div>
 
             {/* Premium Seek Bar */}
-            <div className="mb-10 w-full group">
-              <div
-                className="relative w-full h-[6px] bg-white/20 rounded-full flex items-center transition-all duration-300 ease-out group-hover:h-2"
-              >
-                {/* Buffered track (optional if added later, skipping for now to focus on premium styling) */}
-
-                {/* Active Progress */}
-                <div
-                    className={`absolute h-full rounded-full ${isDragging ? '' : 'transition-all duration-200 ease-linear'}`}
-                    style={{
-                        width: `${(currentTime / duration) * 100 || 0}%`,
-                        backgroundColor: dominantColor,
-                        boxShadow: `0 0 12px ${dominantColor}B3` // Subtle glow
-                    }}
-                />
-
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 0}
-                  value={currentTime || 0}
-                  onChange={handleSeek}
-                  onMouseDown={() => setIsDragging(true)}
-                  onMouseUp={() => setIsDragging(false)}
-                  onTouchStart={() => setIsDragging(true)}
-                  onTouchEnd={() => setIsDragging(false)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-
-                {/* Thumb */}
-                <div
-                    className={`absolute h-4 w-4 rounded-full shadow-md z-0 transition-transform duration-200 ease-out flex items-center justify-center ${isDragging ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
-                    style={{
-                        left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)`,
-                        backgroundColor: '#fff',
-                        boxShadow: `0 4px 12px rgba(0,0,0,0.5), 0 0 12px ${dominantColor}`
-                    }}
-                >
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dominantColor }} />
-                </div>
-              </div>
-
-              <div className="flex justify-between text-xs font-semibold text-white/60 tracking-wider mt-3 px-1">
-                <span className="font-mono">{formatTime(currentTime)}</span>
-                <span className="font-mono">{formatTime(duration)}</span>
-              </div>
-            </div>
+            <ProgressBar duration={duration} dominantColor={dominantColor} seekTo={seekTo} audioRef={audioRef} />
 
             {/* Controls */}
             <div className="flex items-center justify-between mb-8 px-2">
