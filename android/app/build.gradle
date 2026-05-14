@@ -1,4 +1,15 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.chaquo.python'
+
+chaquopy {
+    defaultConfig {
+        version = "3.8"
+        buildPython("/usr/bin/python3")
+        pip {
+            install("yt-dlp")
+        }
+    }
+}
 
 android {
     namespace = "com.ownervibe.app"
@@ -10,6 +21,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
