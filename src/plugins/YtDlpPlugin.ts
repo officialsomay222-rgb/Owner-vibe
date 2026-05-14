@@ -4,6 +4,7 @@ export interface YtDlpPluginPlugin {
   init(): Promise<void>;
   extractAudioUrl(options: { videoId: string; format?: string }): Promise<{ url: string }>;
   downloadAudio(options: { videoId: string; format: string }): Promise<{ filePath: string }>;
+  search(options: { query: string }): Promise<{ results: any[] }>;
   addListener(
     eventName: 'downloadProgress',
     listenerFunc: (progress: { progress: number; eta: number; videoId: string }) => void
