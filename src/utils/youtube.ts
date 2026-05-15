@@ -131,3 +131,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     return null;
   }
 }
+
+export async function getYouTubeAudioDownloadUrl(videoId: string): Promise<string | null> {
+  return getYouTubeAudioStream(videoId); // Use the exact same stream url for download
+}

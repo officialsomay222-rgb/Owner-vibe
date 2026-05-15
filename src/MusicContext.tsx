@@ -346,7 +346,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      const localPath = await musicService.downloadTrack(song.videoId, '251', onProgress);
+      const localPath = await musicService.downloadTrack(song.videoId, song.title, song.artist, '251', onProgress);
       if (localPath) {
          const downloadedSong = { ...song, localPath };
          setDownloadedTracks((prev: Song[]) => [downloadedSong, ...prev]);
