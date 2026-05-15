@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Download, Info } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Info } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
@@ -74,7 +74,7 @@ export const MusicPlayer = () => {
     currentSong, isExpanded, setIsExpanded, isPlaying,
     togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
-    favorites, toggleFavorite, downloadSong
+    favorites, toggleFavorite
   } = useMusic();
 
   const [isMuted, setIsMuted] = useState(false);
@@ -116,18 +116,6 @@ export const MusicPlayer = () => {
     } catch (err) {
       Logger.log('Error sharing:', err);
     }
-  };
-
-  const handleDownload = async () => {
-    if (!currentSong) {
-        alert("No song playing.");
-        return;
-    }
-    const success = await downloadSong(currentSong);
-    if (success) {
-      alert(`Song downloaded successfully: ${currentSong.title}`);
-    }
-    setShowMenu(false);
   };
 
   const toggleMute = () => {
@@ -315,11 +303,6 @@ export const MusicPlayer = () => {
                     <button onClick={handleToggleFavorite} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white">
                         <Heart className={`w-6 h-6 mr-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white/80'}`} />
                         <span className="text-lg font-medium">{isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
-                    </button>
-
-                    <button onClick={handleDownload} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">
-                        <Download className="w-6 h-6 mr-4 text-white/80" />
-                        <span className="text-lg font-medium">Download Song</span>
                     </button>
 
                     <button onClick={handleShare} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">

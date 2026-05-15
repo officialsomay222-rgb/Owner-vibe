@@ -1,6 +1,4 @@
-import { Capacitor } from '@capacitor/core';
-import type { Song, SearchResultItem } from '../types';
-import YtDlpPlugin from '../plugins/YtDlpPlugin';
+import type { SearchResultItem } from '../types';
 import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
@@ -10,18 +8,6 @@ const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
  */
 export async function searchYouTubeMusic(query: string, filter: string = 'songs'): Promise<SearchResultItem[]> {
   try {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await YtDlpPlugin.init();
-        const response = await YtDlpPlugin.search({ query });
-        if (response && response.results) {
-           return response.results;
-        }
-      } catch (err) {
-        Logger.error('Native search failed, falling back to Verome API:', err);
-      }
-    }
-
     const encodedQuery = encodeURIComponent(query);
     let url = `${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}`;
 

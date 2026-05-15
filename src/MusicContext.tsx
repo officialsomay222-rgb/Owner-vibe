@@ -28,8 +28,6 @@ interface MusicContextType {
   playHistory: Song[];
   favorites: Song[];
   toggleFavorite: (song: Song) => void;
-  downloadedTracks: Song[];
-  downloadSong: (song: Song, onProgress?: (p: number) => void) => Promise<boolean>;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -53,7 +51,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
   const [playHistory, setPlayHistory] = useLocalStorage<Song[]>('playHistory', []);
   const [favorites, setFavorites] = useLocalStorage<Song[]>('favorites', []);
-  const [downloadedTracks, setDownloadedTracks] = useLocalStorage<Song[]>('downloadedTracks', []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -110,18 +107,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
       const fetchStream = async () => {
         try {
-          const downloaded = downloadedTracks.find(t => t.videoId === currentSong.videoId);
-          if (downloaded && downloaded.localPath) {
-             const localStreamUrl = Capacitor.isNativePlatform() ? Capacitor.convertFileSrc(downloaded.localPath) : downloaded.localPath;
-             setCurrentSong((prev) => {
-                if (prev && prev.videoId === currentSong.videoId) {
-                  return { ...prev, streamUrl: localStreamUrl };
-                }
-                return prev;
-             });
-             return;
-          }
-
           const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
           if (streamUrl) {
             setCurrentSong((prev) => {
@@ -334,30 +319,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
   };
 
-  const downloadSong = async (song: Song, onProgress?: (p: number) => void): Promise<boolean> => {
-    if (!Capacitor.isNativePlatform()) {
-      alert("Downloading is only supported in the mobile app.");
-      return false;
-    }
-    const existing = downloadedTracks.find(t => t.videoId === song.videoId);
-    if (existing) {
-      alert("Song is already downloaded.");
-      return true; // Already downloaded
-    }
-
-    try {
-      const localPath = await musicService.downloadTrack(song.videoId, '251', onProgress);
-      if (localPath) {
-         const downloadedSong = { ...song, localPath };
-         setDownloadedTracks((prev: Song[]) => [downloadedSong, ...prev]);
-         return true;
-      }
-    } catch (e) {
-      console.error("Download failed:", e);
-    }
-    return false;
-  };
-
   const seekTo = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
@@ -389,9 +350,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioRef,
       playHistory,
       favorites,
-      toggleFavorite,
-      downloadedTracks,
-      downloadSong
+      toggleFavorite
     }}>
       {children}
       <audio
