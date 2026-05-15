@@ -166,6 +166,8 @@ export const MusicPlayer = () => {
             <button
               onClick={() => setIsExpanded(false)}
               className="p-2 -ml-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label="Collapse player"
+              title="Collapse player"
             >
               <ChevronDown className="w-8 h-8" />
             </button>
@@ -173,6 +175,8 @@ export const MusicPlayer = () => {
             <button
               onClick={() => setShowMenu(true)}
               className="p-2 -mr-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label="More options"
+              title="More options"
             >
               <MoreVertical className="w-6 h-6" />
             </button>
@@ -205,6 +209,8 @@ export const MusicPlayer = () => {
               <button
                 onClick={handleToggleFavorite}
                 className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
+                aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
                 <Heart
                   className={`w-7 h-7 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
@@ -221,6 +227,8 @@ export const MusicPlayer = () => {
                 onClick={toggleShuffle}
                 className={`p-3 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                 style={{ color: isShuffle ? dominantColor : undefined }}
+                aria-label={isShuffle ? "Disable shuffle" : "Enable shuffle"}
+                title={isShuffle ? "Disable shuffle" : "Enable shuffle"}
               >
                 <Shuffle className="w-6 h-6" />
               </button>
@@ -228,6 +236,8 @@ export const MusicPlayer = () => {
               <button
                 onClick={playPrevious}
                 className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                aria-label="Previous song"
+                title="Previous song"
               >
                 <SkipBack className="w-10 h-10 fill-current" />
               </button>
@@ -236,6 +246,8 @@ export const MusicPlayer = () => {
                 onClick={togglePlayPause}
                 className="p-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl"
                 style={{ backgroundColor: dominantColor, color: '#fff' }}
+                aria-label={isPlaying ? "Pause" : "Play"}
+                title={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
                   <Pause className="w-10 h-10 fill-current" />
@@ -247,6 +259,8 @@ export const MusicPlayer = () => {
               <button
                 onClick={playNext}
                 className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                aria-label="Next song"
+                title="Next song"
               >
                 <SkipForward className="w-10 h-10 fill-current" />
               </button>
@@ -255,6 +269,8 @@ export const MusicPlayer = () => {
                 onClick={toggleRepeat}
                 className={`p-3 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                 style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
+                aria-label={repeatMode === 'none' ? "Enable repeat" : repeatMode === 'all' ? "Repeat one" : "Disable repeat"}
+                title={repeatMode === 'none' ? "Enable repeat" : repeatMode === 'all' ? "Repeat one" : "Disable repeat"}
               >
                 <Repeat className="w-6 h-6" />
               </button>
@@ -262,10 +278,20 @@ export const MusicPlayer = () => {
 
             {/* Volume & Extras */}
             <div className="flex items-center justify-between px-6 text-white/50">
-                <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
+                <button
+                  onClick={toggleMute}
+                  className="hover:text-white transition-colors active:scale-90 p-2"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
                     {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
-                <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
+                <button
+                  onClick={handleShare}
+                  className="hover:text-white transition-colors active:scale-90 p-2"
+                  aria-label="Share song"
+                  title="Share song"
+                >
                     <Share2 className="w-5 h-5" />
                 </button>
             </div>
