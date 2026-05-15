@@ -1,4 +1,5 @@
 import { Song } from '../types';
+import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
@@ -32,7 +33,7 @@ export async function fetchPlaylistDetails(playlistId: string): Promise<DetailsD
       tracks
     };
   } catch (e) {
-    console.error(e);
+    Logger.error(e);
     return null;
   }
 }
@@ -60,7 +61,7 @@ export async function fetchAlbumDetails(browseId: string): Promise<DetailsData |
       tracks
     };
   } catch (e) {
-    console.error(e);
+    Logger.error(e);
     return null;
   }
 }
@@ -88,7 +89,7 @@ export async function fetchArtistDetails(browseId: string): Promise<DetailsData 
       tracks
     };
   } catch (e) {
-    console.error(e);
+    Logger.error(e);
     return null;
   }
 }
