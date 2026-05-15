@@ -8,8 +8,8 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { 
     Home, Search, Library, Settings, MoreVertical, 
     Share2, CircleHelp, History, ArrowUpLeft, 
-    Plus, Heart, Plane, Download, ArrowDown, ListFilter,
-    Palette, ListVideo, Music, Download as DownloadIcon, HardDrive, LayoutGrid, Info, ChevronDown, X, Play
+    Plus, Heart, Plane, ArrowDown, ListFilter,
+    Palette, ListVideo, Music, HardDrive, LayoutGrid, Info, ChevronDown, X, Play
 } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { MusicPlayer } from './MusicPlayer';
@@ -390,10 +390,10 @@ const SearchTab = () => {
 
 const LibraryTab = () => {
     const [activeSection, setActiveSection] = useState('Playlists');
-    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites' | 'downloads'>('main');
+    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites'>('main');
 
     // Using mock data for demonstration
-    const { playSong, playHistory, favorites, downloadedTracks } = useMusic();
+    const { playSong, playHistory, favorites } = useMusic();
     const myPlaylists = [
         { id: 1, title: 'Gym Motivation', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200', views: '398 MILLION VIEWS' },
         { id: 2, title: 'Late Night Vibes', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200' },
@@ -434,52 +434,6 @@ const LibraryTab = () => {
                             )}
                         </div>
                     ))}
-                </div>
-            </div>
-        );
-    }
-
-    if (libraryView === 'downloads') {
-        return (
-            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
-                <button onClick={() => setLibraryView('main')} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
-                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
-                    <span className="font-medium">Back</span>
-                </button>
-                <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-emerald-500/10 light:bg-emerald-50 rounded-xl flex items-center justify-center mr-4">
-                        <Download className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight">Downloads</h2>
-                </div>
-
-                <div className="flex flex-col space-y-3">
-                    {downloadedTracks.map((song, idx) => (
-                        <div
-                            key={`${song.videoId}-${idx}`}
-                            onClick={() => playSong(song, downloadedTracks)}
-                            className="flex items-center p-3 rounded-[20px] bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.06] light:hover:bg-black/[0.05] border border-white/[0.02] light:border-black/[0.05] cursor-pointer transition-all duration-300 group active:scale-[0.98]"
-                        >
-                            <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md">
-                                <img src={song.thumbnailUrl} alt={song.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors"></div>
-                            </div>
-                            <div className="ml-4 flex-1 overflow-hidden pr-2">
-                                <h4 className="text-white/90 light:text-gray-900 font-bold text-[15px] truncate">{song.title}</h4>
-                                <p className="text-[#888] light:text-gray-500 text-[13px] font-medium truncate mt-0.5">{song.artist}</p>
-                            </div>
-                            <DownloadIcon className="w-5 h-5 text-emerald-500 mr-2" />
-                        </div>
-                    ))}
-                    {downloadedTracks.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-20 text-center">
-                            <div className="w-16 h-16 bg-white/[0.03] rounded-full flex items-center justify-center mb-4">
-                                <Download className="w-8 h-8 text-white/20" />
-                            </div>
-                            <h3 className="text-white/80 font-bold text-lg mb-1">No downloads yet</h3>
-                            <p className="text-white/40 text-sm max-w-[200px]">Songs you download will appear here.</p>
-                        </div>
-                    )}
                 </div>
             </div>
         );
@@ -590,13 +544,6 @@ const LibraryTab = () => {
                </motion.div>
                <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Cached/Offline</span>
            </div>
-           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('downloads')}>
-               <div className="w-full aspect-square bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 light:from-emerald-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-emerald-500/20 light:border-emerald-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-emerald-500/40 light:group-hover:border-emerald-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <Download className="w-[42px] h-[42px] text-emerald-500 light:text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
-               </div>
-               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Downloads</span>
-           </div>
         </div>
 
 
@@ -658,16 +605,12 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
     const [normalizeVolume, setNormalizeVolume] = useLocalStorage('settings_normalizeVolume', true);
     const [autoplay, setAutoplay] = useLocalStorage('settings_autoplay', true);
 
-    const [downloadQuality, setDownloadQuality] = useLocalStorage('settings_downloadQuality', 'high');
-    const [wifiOnly, setWifiOnly] = useLocalStorage('settings_wifiOnly', true);
-
     const [sleepTimer, setSleepTimer] = useLocalStorage('settings_sleepTimer', 'off');
 
     const settingsItems = [
         { id: 'personalisation', icon: Palette, label: 'Personalisation' },
         { id: 'content', icon: ListVideo, label: 'Content' },
         { id: 'music', icon: Music, label: 'Music & Playback' },
-        { id: 'download', icon: DownloadIcon, label: 'Download' },
         { id: 'backup', icon: HardDrive, label: 'Backup & Restore' },
         { id: 'misc', icon: LayoutGrid, label: 'Misc' },
         { id: 'info', icon: Info, label: 'App Info' },
@@ -759,17 +702,6 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
                                             <Toggle enabled={gaplessPlayback} onChange={setGaplessPlayback} label="Gapless Playback" description="Remove silence between tracks" />
                                             <Toggle enabled={normalizeVolume} onChange={setNormalizeVolume} label="Normalize Volume" description="Set the same volume level for all tracks" />
                                             <Toggle enabled={autoplay} onChange={setAutoplay} label="Autoplay" description="Keep playing similar tracks when your selection ends" />
-                                        </>
-                                    )}
-
-                                    {item.id === 'download' && (
-                                        <>
-                                            <Select value={downloadQuality} onChange={setDownloadQuality} label="Download Quality" options={[
-                                                {id: 'normal', label: 'Normal (Standard)'},
-                                                {id: 'high', label: 'High (Best Quality)'}
-                                            ]} />
-                                            <Toggle enabled={wifiOnly} onChange={setWifiOnly} label="Download over Wi-Fi only" description="Save cellular data" />
-                                            <ActionButton onClick={() => alert('Downloads Cleared!')} label="Clear Downloads" description="Remove all downloaded tracks from this device" buttonText="Clear" destructive />
                                         </>
                                     )}
 
