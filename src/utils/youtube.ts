@@ -1,5 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { Song, SearchResultItem } from '../types';
+import YtDlpPlugin from '../plugins/YtDlpPlugin';
+import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
@@ -8,6 +10,18 @@ const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
  */
 export async function searchYouTubeMusic(query: string, filter: string = 'songs'): Promise<SearchResultItem[]> {
   try {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await YtDlpPlugin.init();
+        const response = await YtDlpPlugin.search({ query });
+        if (response && response.results) {
+           return response.results;
+        }
+      } catch (err) {
+        Logger.error('Native search failed, falling back to Verome API:', err);
+      }
+    }
+
     const encodedQuery = encodeURIComponent(query);
     let url = `${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}`;
 
@@ -76,7 +90,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
 
     return items;
   } catch (err) {
-    console.error('Failed to search via Verome API:', err);
+    Logger.error('Failed to search via Verome API:', err);
     return [];
   }
 }
@@ -113,7 +127,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     return anyStream.length > 0 ? anyStream[0].url : null;
 
   } catch (err) {
-    console.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
+    Logger.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
     return null;
   }
 }
