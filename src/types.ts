@@ -5,6 +5,7 @@ export interface Song {
   thumbnailUrl: string;
   duration?: string;
   streamUrl?: string;
+  localPath?: string;
 }
 
 export interface SearchResultItem {
