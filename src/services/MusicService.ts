@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import YtDlpPlugin from '../plugins/YtDlpPlugin';
 import { getYouTubeAudioStream } from '../utils/youtube';
+import { Logger } from '../utils/logger';
 
 class MusicService {
   private isInitialized = false;
@@ -11,7 +12,7 @@ class MusicService {
         await YtDlpPlugin.init();
         this.isInitialized = true;
       } catch (e) {
-        console.error('Failed to initialize YtDlpPlugin', e);
+        Logger.error('Failed to initialize YtDlpPlugin', e);
       }
     }
   }
@@ -23,7 +24,7 @@ class MusicService {
         const { url } = await YtDlpPlugin.extractAudioUrl({ videoId, format: preferredFormat });
         return url;
       } catch (e) {
-        console.error('Native extraction failed, falling back to web proxy', e);
+        Logger.error('Native extraction failed, falling back to web proxy', e);
         // Fallback intentionally omitted here to force native logic, or we can use the web proxy as a last resort:
         return getYouTubeAudioStream(videoId);
       }
@@ -50,11 +51,11 @@ class MusicService {
         return filePath;
       } catch (e) {
         if (listener) listener.remove();
-        console.error('Download failed', e);
+        Logger.error('Download failed', e);
         return null;
       }
     } else {
-      console.warn('Downloading is only supported on native Android');
+      Logger.warn('Downloading is only supported on native Android');
       return null;
     }
   }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { Song } from './types';
 import { musicService } from './services/MusicService';
 import { MediaSession } from '@capgo/capacitor-media-session';
+import { Logger } from './utils/logger';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
 interface MusicContextType {
@@ -61,9 +62,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('SafePlay: Playback aborted by new load request. Safely ignored.');
+        Logger.log('SafePlay: Playback aborted by new load request. Safely ignored.');
       } else {
-        console.error('SafePlay: Actual playback error:', error);
+        Logger.error('SafePlay: Actual playback error:', error);
       }
     }
   };
@@ -114,10 +115,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               return prev;
             });
           } else {
-              console.error("Failed to find suitable stream URL for", currentSong.videoId);
+              Logger.error("Failed to find suitable stream URL for", currentSong.videoId);
           }
         } catch (err) {
-          console.error("Failed to fetch youtube stream:", err);
+          Logger.error("Failed to fetch youtube stream:", err);
         }
       };
       fetchStream();
@@ -355,17 +356,17 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ref={audioRef}
         src={currentSong?.streamUrl || ''}
         playsInline={true}
-        onLoadStart={() => console.log('1. Audio: Load Started')}
-        onLoadedMetadata={() => console.log('2. Audio: Metadata Loaded')}
+        onLoadStart={() => Logger.log('1. Audio: Load Started')}
+        onLoadedMetadata={() => Logger.log('2. Audio: Metadata Loaded')}
         onCanPlay={() => {
-          console.log('3. Audio: Can Play (Buffer ready)');
+          Logger.log('3. Audio: Can Play (Buffer ready)');
           safePlay(); // Trigger our safe play here
         }}
-        onWaiting={() => console.log('Audio: Waiting for data/buffering...')}
-        onStalled={() => console.warn('Audio: Stalled (Network issue)')}
+        onWaiting={() => Logger.log('Audio: Waiting for data/buffering...')}
+        onStalled={() => Logger.warn('Audio: Stalled (Network issue)')}
         onError={(e) => {
-          console.error('Audio Tag Fatal Error:', e.currentTarget.error);
-          console.log('Failed URL:', currentSong?.streamUrl);
+          Logger.error('Audio Tag Fatal Error:', e.currentTarget.error);
+          Logger.log('Failed URL:', currentSong?.streamUrl);
         }}
       />
     </MusicContext.Provider>

@@ -5,6 +5,7 @@ import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
 import { useAudioTime } from './hooks/useAudioTime';
+import { Logger } from './utils/logger';
 
 export const MusicPlayer = () => {
   const {
@@ -53,7 +54,7 @@ export const MusicPlayer = () => {
         alert('Song info copied to clipboard!');
       }
     } catch (err) {
-      console.log('Error sharing:', err);
+      Logger.log('Error sharing:', err);
     }
   };
 
