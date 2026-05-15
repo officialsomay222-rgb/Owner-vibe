@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     url: 'https://owner-vibe.vercel.app/',
-    cleartext: true
+    cleartext: false
   },
   plugins: {
     CapacitorHttp: {
