@@ -65,6 +65,8 @@ export const MiniPlayer = () => {
                 togglePlayPause();
               }}
               className="p-2 text-white hover:text-white/80 transition-colors"
+              aria-label={isPlaying ? "Pause" : "Play"}
+              title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6 fill-current" />
@@ -78,6 +80,8 @@ export const MiniPlayer = () => {
                 playNext();
               }}
               className="p-2 text-white hover:text-white/80 transition-colors"
+              aria-label="Next song"
+              title="Next song"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>
