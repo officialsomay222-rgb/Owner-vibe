@@ -11,7 +11,7 @@ export const MusicPlayer = () => {
     currentSong, isExpanded, setIsExpanded, isPlaying,
     togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
-    favorites, toggleFavorite
+    favorites, toggleFavorite, downloadSong
   } = useMusic();
 
   const currentTime = useAudioTime(audioRef);
@@ -57,15 +57,15 @@ export const MusicPlayer = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (!currentSong || !audioRef.current?.src) {
-        alert("Cannot download this song right now.");
+  const handleDownload = async () => {
+    if (!currentSong) {
+        alert("No song playing.");
         return;
     }
-    const a = document.createElement('a');
-    a.href = audioRef.current.src;
-    a.download = `${currentSong.title}.m4a`;
-    a.click();
+    const success = await downloadSong(currentSong);
+    if (success) {
+      alert(`Song downloaded successfully: ${currentSong.title}`);
+    }
     setShowMenu(false);
   };
 

@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.os.Environment;
 import java.io.File;
 
 @CapacitorPlugin(name = "YtDlpPlugin")
@@ -135,8 +136,12 @@ public class YtDlpPlugin extends Plugin {
         }
 
         try {
-            File downloadDir = getContext().getCacheDir();
-            String downloadDirPath = downloadDir.getAbsolutePath();
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File appDownloadDir = new File(downloadsDir, "Owner Vibe");
+            if (!appDownloadDir.exists()) {
+                appDownloadDir.mkdirs();
+            }
+            String downloadDirPath = appDownloadDir.getAbsolutePath();
 
             PyObject result = ytdlpModule.callAttr("download_audio", videoId, downloadDirPath, format);
             String jsonResult = result.toString();
