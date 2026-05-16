@@ -1,3 +1,3 @@
-## 2024-05-18 - Optimize MediaSession and track switching
-**Learning:** Re-binding Capacitor native bridge handlers (`MediaSession.setActionHandler`) on every state change causes massive overhead, lag, and dropped events. Redundant network requests for stream URLs on repeat playbacks further slow down track switching.
-**Action:** Use a `useRef` to hold the latest action functions and bind the native handlers only once (`[]` dependencies). Implement an in-memory `Map` with a TTL to cache stream URLs. Synchronously reset `audioRef.current.currentTime = 0` during track changes to instantly reset UI time.
+## 2024-05-16 - Reduce App Lag via Hardware Acceleration
+**Learning:** Heavy CSS properties like `backdrop-blur` and large `blur` filters on `absolute`/`fixed` positioned elements force constant repaints on the main thread (CPU), resulting in significant UI lag on lower-end mobile devices and WebViews.
+**Action:** Always append GPU acceleration utilities (`transform-gpu will-change-transform`) to computationally expensive visual elements (blurs, fixed headers, nav bars) to offload rendering to the device's GPU, immediately dropping latency without altering visual fidelity.

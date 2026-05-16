@@ -40,14 +40,14 @@ const scarionixAlbums = [
 ];
 
 const Header = ({ isVisible }: { isVisible: boolean }) => (
-  <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 pt-safe bg-black/60 backdrop-blur-[40px] transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+  <header className={`fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 py-4 pt-safe bg-black/60 backdrop-blur-[40px] transform-gpu will-change-transform transition-transform duration-500 ease-out border-b border-white/[0.05] light:bg-white/80 light:border-black/5 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
     <div className="flex items-center space-x-1 pl-1">
       <div className="flex items-baseline">
         <span className="text-[24px] font-bold tracking-widest text-[#f0f0f0] drop-shadow-sm font-serif light:text-gray-900 transition-colors">❍Ꮿꪀꫀ𝚁</span>
         <span className="text-[20px] ml-[2px] font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f0f0f0] to-[#a0a0a0] light:from-gray-900 light:to-gray-500 drop-shadow-sm font-serif italic text-shadow-sm transition-colors">'s Vibe</span>
       </div>
       <div className="flex items-center justify-center relative translate-y-[1px] ml-1.5" id="verifiedOwnerTick">
-        <div className="absolute inset-0 bg-yellow-500/25 blur-[5px] rounded-full scale-110"></div>
+        <div className="absolute inset-0 bg-yellow-500/25 blur-[5px] rounded-full scale-110 transform-gpu will-change-transform"></div>
         <svg className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] light:drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <linearGradient id="goldGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
@@ -905,13 +905,13 @@ export default function App() {
       <MiniPlayer />
       <MusicPlayer />
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-[#000000]/80 backdrop-blur-[48px] border-t border-white/[0.08] pb-safe pt-2 shadow-[0_-10px_50px_rgba(0,0,0,0.6)] light:bg-white/90 light:border-black/[0.08] light:shadow-[0_-5px_30px_rgba(0,0,0,0.08)] transition-colors duration-500">
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-[#000000]/80 backdrop-blur-[48px] transform-gpu will-change-transform border-t border-white/[0.08] pb-safe pt-2 shadow-[0_-10px_50px_rgba(0,0,0,0.6)] light:bg-white/90 light:border-black/[0.08] light:shadow-[0_-5px_30px_rgba(0,0,0,0.08)] transition-colors duration-500">
         <div className="flex items-center justify-around h-[70px] pointer-events-auto max-w-md mx-auto px-2 relative">
           {tabs.map((tab) => {
             if (tab.isCustom) {
               return (
                 <button key="center-play" className="flex flex-col items-center justify-center -mt-12 group focus:outline-none outline-none relative z-10 w-20">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-purple-500 to-blue-500 rounded-full blur-xl opacity-60 animate-pulse pointer-events-none -z-10 mix-blend-screen light:mix-blend-multiply"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500 via-purple-500 to-blue-500 rounded-full blur-xl opacity-60 animate-pulse pointer-events-none -z-10 mix-blend-screen light:mix-blend-multiply transform-gpu will-change-transform"></div>
                   <div className="relative flex items-center justify-center w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 shadow-[0_8px_32px_rgba(0,210,255,0.4)] group-hover:shadow-[0_12px_40px_rgba(138,43,226,0.6)] group-hover:scale-[1.05] group-active:scale-[0.95] transition-all duration-400 p-[3px] border-none">
                     <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-[#0a0a0a] light:border-white relative bg-black flex items-center justify-center">
                         <img src={logoNav} alt="Logo" className="w-full h-full object-cover scale-[1.2]" />
