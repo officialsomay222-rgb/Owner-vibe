@@ -72,78 +72,124 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
 );
 
 const HomeTab = () => {
-    const { playSong } = useMusic();
+    const { playSong, playHistory } = useMusic();
+
+    // 1. Prepare data for Top 2x3 Grid (6 items)
+    // Prioritize playHistory, then favorites, then fallback to discoverSongs
+    const gridItems = [];
+
+    // Add up to 6 from playHistory
+    for (let i = 0; i < playHistory.length && gridItems.length < 6; i++) {
+        if (!gridItems.find(item => item.videoId === playHistory[i].videoId)) {
+            gridItems.push({...playHistory[i], type: 'song'});
+        }
+    }
+
+    // Fill remaining with fallback data
+    let fallbackIndex = 0;
+    while (gridItems.length < 6 && fallbackIndex < discoverSongs.length) {
+        if (!gridItems.find(item => item.videoId === discoverSongs[fallbackIndex].videoId)) {
+            gridItems.push({...discoverSongs[fallbackIndex], type: 'song'});
+        }
+        fallbackIndex++;
+    }
+
+    // 2. Prepare data for "Recently Played" row
+    const recentItems = playHistory.length > 0 ? playHistory.slice(0, 15) : discoverSongs;
+
+    // 3. Prepare data for "Jump back in" / "Suggested" row
+    // We'll use recommendedPlaylists, and maybe mix in some history if available
+    const jumpBackInItems = playHistory.length > 0
+        ? [...playHistory].reverse().slice(0, 10) // Mocking suggestions by reversing history
+        : recommendedPlaylists.map(p => ({ videoId: '', title: p.title, artist: p.subtitle, thumbnailUrl: p.img, isMock: true }));
 
     return (
-    <div className="flex flex-col pt-[84px] pb-32 px-5 space-y-12 animate-in fade-in duration-500">
+    <div className="flex flex-col pt-[84px] pb-32 px-4 space-y-8 animate-in fade-in duration-500">
+
+        {/* Top 2x3 Grid */}
         <section>
-            <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Discover</h2>
-            <div className="flex flex-col space-y-3">
-                {discoverSongs.map((song) => (
+            <div className="grid grid-cols-2 gap-2">
+                {gridItems.map((item, idx) => (
                     <div
-                        key={song.videoId}
-                        onClick={() => playSong(song, discoverSongs)}
-                        className="flex items-center justify-between p-3 rounded-[20px] bg-white/[0.01] light:bg-black/[0.01] border border-white/[0.03] hover:border-white/[0.08] light:border-black/[0.03] light:hover:border-black/[0.08] hover:bg-white/[0.04] light:hover:bg-black/[0.03] group cursor-pointer active:scale-[0.98] transition-all duration-300 ease-out shadow-[0_4px_20px_rgba(0,0,0,0.2)] light:shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:hover:shadow-[0_4px_15px_rgba(0,0,0,0.05)]"
+                        key={`grid-${item.videoId}-${idx}`}
+                        onClick={() => playSong(item, gridItems)}
+                        className="flex items-center p-0 rounded-md bg-white/[0.05] light:bg-black/[0.05] hover:bg-white/[0.1] light:hover:bg-black/[0.1] cursor-pointer overflow-hidden transition-all duration-300 group"
                     >
-                        <div className="flex items-center space-x-4">
-                            <div className="relative overflow-hidden rounded-[16px] shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm border border-white/[0.04] light:border-black/[0.04]">
-                                <img src={song.thumbnailUrl} alt={song.title} className="w-[60px] h-[60px] object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                    <Play className="w-6 h-6 text-white fill-white ml-0.5 drop-shadow-md" />
-                                </div>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-white/95 light:text-gray-900 transition-colors text-[16px] font-bold tracking-wide leading-tight line-clamp-1 mb-1">{song.title}</span>
-                                <span className="text-[#888] light:text-gray-500 transition-colors text-[13px] font-medium tracking-wide line-clamp-1 group-hover:text-[#aaa] light:group-hover:text-gray-700">{song.artist}</span>
+                        <div className="relative w-14 h-14 shrink-0 shadow-[4px_0_10px_rgba(0,0,0,0.3)] light:shadow-sm">
+                            <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                             </div>
                         </div>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); }}
-                            className="text-[#555] light:text-gray-400 transition-colors group-hover:text-white light:group-hover:text-black p-2 bg-white/[0.02] light:bg-black/[0.02] hover:bg-white/[0.08] light:hover:bg-black/[0.06] rounded-full active:scale-90"
-                        >
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
+                        <span className="text-white/95 light:text-gray-900 transition-colors text-[13px] font-bold tracking-wide leading-tight line-clamp-2 px-3 py-1 flex-1">
+                            {item.title}
+                        </span>
                     </div>
                 ))}
             </div>
         </section>
 
+        {/* Recently Played Row */}
         <section>
-            <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-6 tracking-tight pl-1">Recommended playlists</h2>
-            <div className="flex overflow-x-auto space-x-5 no-scrollbar pb-6 -mx-5 px-5 snap-x">
-                {recommendedPlaylists.map(playlist => (
-                     <div key={playlist.id} className="flex-none p-3.5 rounded-[24px] bg-gradient-to-b from-white/[0.04] to-white/[0.01] light:from-white light:to-gray-50 border border-white/[0.06] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 w-[170px] snap-start cursor-pointer hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.4)] light:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] light:hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] group">
-                         <div className="relative mb-4 rounded-[16px] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.6)] light:shadow-sm">
-                            <img src={playlist.img} alt={playlist.title} className="w-full aspect-square object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2 justify-end">
-                                <div className="w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-lg translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-100">
-                                    <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                                </div>
+            <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-4 tracking-tight pl-1">Recently played</h2>
+            <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
+                {recentItems.map((item, idx) => (
+                    <div key={`recent-${item.videoId}-${idx}`}
+                         onClick={() => playSong(item, recentItems)}
+                         className="flex-none w-[140px] flex flex-col group cursor-pointer snap-start active:scale-95 transition-transform duration-300">
+                        <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm">
+                            <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <Play className="w-10 h-10 text-white fill-white ml-1 drop-shadow-md" />
                             </div>
-                         </div>
-                         <h3 className="text-white/95 light:text-gray-900 transition-colors font-bold text-[15px] line-clamp-2 leading-snug tracking-wide px-1">{playlist.title}</h3>
-                         <p className="text-[#777] light:text-gray-500 transition-colors font-medium text-[12px] mt-1.5 truncate px-1">{playlist.subtitle}</p>
-                     </div>
+                        </div>
+                        <span className="text-white/95 light:text-gray-900 transition-colors text-[14px] font-bold tracking-wide leading-tight line-clamp-2 px-1">{item.title}</span>
+                        {item.artist && <span className="text-[#888] light:text-gray-500 transition-colors text-[12px] font-medium mt-1 truncate px-1">{item.artist}</span>}
+                    </div>
                 ))}
             </div>
         </section>
 
+        {/* Jump back in Row */}
         <section>
-            <h2 className="text-[17px] font-bold text-white/70 light:text-gray-500 transition-colors uppercase mb-5 tracking-[0.2em] pl-1">SCARIONIX</h2>
-            <div className="flex overflow-x-auto space-x-6 no-scrollbar pb-4 -mx-5 px-5 snap-x">
+            <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-4 tracking-tight pl-1">Jump back in</h2>
+            <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
+                {jumpBackInItems.map((item: any, idx) => (
+                    <div key={`jump-${item.videoId || item.id || item.title}-${idx}`}
+                         onClick={() => {
+                             if (!item.isMock) {
+                                 playSong(item as any, jumpBackInItems.filter((i: any) => !i.isMock) as any[]);
+                             }
+                         }}
+                         className="flex-none w-[140px] flex flex-col group cursor-pointer snap-start active:scale-95 transition-transform duration-300">
+                        <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm">
+                            <img src={item.thumbnailUrl || item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <Play className="w-10 h-10 text-white fill-white ml-1 drop-shadow-md" />
+                            </div>
+                        </div>
+                        <span className="text-white/95 light:text-gray-900 transition-colors text-[14px] font-bold tracking-wide leading-tight line-clamp-2 px-1">{item.title}</span>
+                        {item.artist && <span className="text-[#888] light:text-gray-500 transition-colors text-[12px] font-medium mt-1 truncate px-1">{item.artist}</span>}
+                    </div>
+                ))}
+            </div>
+        </section>
+
+        {/* Suggested Artists / SCARIONIX Fallback */}
+        <section>
+            <h2 className="text-[17px] font-bold text-white/70 light:text-gray-500 transition-colors uppercase mb-4 tracking-[0.2em] pl-1">Suggested for you</h2>
+            <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
                 {scarionixAlbums.map(album => (
-                    <div key={album.id} className="relative flex-none w-[150px] aspect-square rounded-[24px] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.6)] light:shadow-md snap-start cursor-pointer active:scale-95 hover:shadow-[0_16px_40px_rgba(255,255,255,0.06)] light:hover:shadow-lg border-2 border-white/[0.04] light:border-black/5 hover:border-white/[0.15] light:hover:border-black/15 transition-all duration-300 group">
-                        <img src={album.img} alt="Album" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 light:from-black/60 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                             <div className="w-full flex justify-between items-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                <span className="text-white text-xs font-bold tracking-wider">PLAY</span>
-                                <Play className="w-4 h-4 text-white fill-white" />
-                             </div>
+                    <div key={album.id} className="relative flex-none w-[140px] aspect-square rounded-full overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.6)] light:shadow-md snap-start cursor-pointer active:scale-95 transition-transform duration-300 group">
+                        <img src={album.img} alt="Artist" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <Play className="w-8 h-8 text-white fill-white ml-1" />
                         </div>
                     </div>
                 ))}
             </div>
         </section>
+
     </div>
   );
 };
