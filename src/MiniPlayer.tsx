@@ -19,7 +19,7 @@ const MiniProgressBar = ({ duration, audioRef }: { duration: number, audioRef: R
 };
 
 export const MiniPlayer = () => {
-  const { currentSong, isExpanded, setIsExpanded, isPlaying, togglePlayPause, playNext, duration, audioRef } = useMusic();
+  const { currentSong, isExpanded, setIsExpanded, isPlaying, isLoadingStream, togglePlayPause, playNext, duration, audioRef } = useMusic();
 
   if (!currentSong || isExpanded) return null;
   const mediumResThumb = currentSong?.thumbnailUrl?.replace(/=w\d+-h\d+/, '=w120-h120') || currentSong?.thumbnailUrl;
@@ -62,11 +62,16 @@ export const MiniPlayer = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                togglePlayPause();
+                if (!isLoadingStream) {
+                   togglePlayPause();
+                }
               }}
-              className="p-2 text-white hover:text-white/80 transition-colors"
+              disabled={isLoadingStream}
+              className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
-              {isPlaying ? (
+              {isLoadingStream ? (
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : isPlaying ? (
                 <Pause className="w-6 h-6 fill-current" />
               ) : (
                 <Play className="w-6 h-6 fill-current ml-0.5" />

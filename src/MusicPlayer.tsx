@@ -72,7 +72,7 @@ const ProgressBar = ({ duration, dominantColor, seekTo, audioRef }: { duration: 
 
 export const MusicPlayer = () => {
   const {
-    currentSong, isExpanded, setIsExpanded, isPlaying,
+    currentSong, isExpanded, setIsExpanded, isPlaying, isLoadingStream,
     togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
     favorites, toggleFavorite, addToQueue, addToPlaylist, showPlaylistModal
@@ -312,10 +312,13 @@ export const MusicPlayer = () => {
 
                   <button
                     onClick={togglePlayPause}
-                    className="p-5 landscape:p-4 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl"
+                    disabled={isLoadingStream}
+                    className={`p-5 landscape:p-4 rounded-full flex items-center justify-center transition-all shadow-xl ${isLoadingStream ? 'opacity-80' : 'active:scale-90'}`}
                     style={{ backgroundColor: dominantColor, color: '#fff' }}
                   >
-                    {isPlaying ? (
+                    {isLoadingStream ? (
+                       <div className="w-10 h-10 landscape:w-8 landscape:h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : isPlaying ? (
                       <Pause className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
                     ) : (
                       <Play className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current translate-x-1" />

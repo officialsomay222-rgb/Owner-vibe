@@ -11,6 +11,7 @@ interface MusicContextType {
   currentSong: Song | null;
   queue: Song[];
   isPlaying: boolean;
+  isLoadingStream: boolean;
   // ⚡ OPTIMIZATION: `currentTime` was removed from context to prevent global re-renders
   // on every timeupdate. It is now tracked locally via the `useAudioTime` hook.
   duration: number;
@@ -50,6 +51,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [originalQueue, setOriginalQueue] = useState<Song[]>([]);
   const [queue, setQueue] = useState<Song[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [duration, setDuration] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -97,6 +99,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let isCancelled = false;
 
     if (currentSong && currentSong.localPath) {
+       setIsLoadingStream(false);
        if (Capacitor.isNativePlatform()) {
          setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
        } else {
@@ -145,9 +148,13 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
+      setIsLoadingStream(true);
       const fetchStream = async () => {
         try {
           const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
+
+          if (isCancelled) return;
+
           if (streamUrl) {
             setCurrentSong((prev) => {
               if (prev && prev.videoId === currentSong.videoId) {
@@ -157,12 +164,19 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
           } else {
               Logger.error("Failed to find suitable stream URL for", currentSong.videoId);
+              playNext();
           }
         } catch (err) {
+          if (isCancelled) return;
           Logger.error("Failed to fetch youtube stream:", err);
+          playNext();
+        } finally {
+            if (!isCancelled) setIsLoadingStream(false);
         }
       };
       fetchStream();
+    } else if (currentSong?.streamUrl) {
+        setIsLoadingStream(false);
     }
   }, [currentSong]);
 
@@ -297,6 +311,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsExpanded(true);
     setCurrentSong(song);
     setIsPlaying(true);
+    setIsLoadingStream(!song.streamUrl && !song.localPath);
 
     if (newQueue) {
       setOriginalQueue(newQueue);
@@ -332,6 +347,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
           setCurrentSong(queue[currentIndex + 1]);
           setIsPlaying(true);
+          setIsLoadingStream(!queue[currentIndex + 1].streamUrl && !queue[currentIndex + 1].localPath);
         } else if (repeatMode === 'all') {
           // Loop back to the first song
           if (audioRef.current) {
@@ -341,6 +357,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
           setCurrentSong(queue[0]);
           setIsPlaying(true);
+          setIsLoadingStream(!queue[0].streamUrl && !queue[0].localPath);
         } else {
           setIsPlaying(false);
         }
@@ -359,6 +376,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       setCurrentSong(queue[currentIndex - 1]);
       setIsPlaying(true);
+      setIsLoadingStream(!queue[currentIndex - 1].streamUrl && !queue[currentIndex - 1].localPath);
     } else if (repeatMode === 'all') {
       // Go to the last song
       if (audioRef.current) {
@@ -368,6 +386,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       setCurrentSong(queue[queue.length - 1]);
       setIsPlaying(true);
+      setIsLoadingStream(!queue[queue.length - 1].streamUrl && !queue[queue.length - 1].localPath);
     }
   };
 
@@ -455,6 +474,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       currentSong,
       queue,
       isPlaying,
+      isLoadingStream,
       duration,
       isExpanded,
       playSong,
