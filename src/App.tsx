@@ -600,7 +600,7 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
     const [contentLang, setContentLang] = useLocalStorage('settings_contentLang', 'en');
     const [explicitContent, setExplicitContent] = useLocalStorage('settings_explicitContent', false);
 
-    const [audioQuality, setAudioQuality] = useLocalStorage('settings_audioQuality', 'high');
+    const [audioQuality, setAudioQuality] = useLocalStorage('owners_vibe_audio_quality', 'normal');
     const [gaplessPlayback, setGaplessPlayback] = useLocalStorage('settings_gaplessPlayback', true);
     const [normalizeVolume, setNormalizeVolume] = useLocalStorage('settings_normalizeVolume', true);
     const [autoplay, setAutoplay] = useLocalStorage('settings_autoplay', true);

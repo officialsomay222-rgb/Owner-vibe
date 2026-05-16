@@ -83,7 +83,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
 
 /**
  * Gets the raw stream URL for playback natively in Capacitor via Verome API.
- * Prioritizes the highest bitrate M4A (mp4a/audio/mp4) audio for WebView compatibility.
+ * Uses the requested audio quality preference from local storage.
  */
 export async function getYouTubeAudioStream(videoId: string): Promise<string | null> {
   try {
@@ -99,18 +99,37 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
       return null;
     }
 
-    // Filter for audio/mp4 (M4A) and sort by bitrate descending
-    const mp4Streams = data.streamingUrls
-      .filter((s: any) => s.mimeType && s.mimeType.includes('audio/mp4'))
-      .sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-
-    if (mp4Streams.length > 0) {
-      return mp4Streams[0].url;
+    let audioQuality = 'normal';
+    try {
+      const stored = window.localStorage.getItem('owners_vibe_audio_quality');
+      if (stored) {
+        audioQuality = JSON.parse(stored);
+      }
+    } catch (e) {
+      Logger.warn('Failed to parse audio quality from localStorage', e);
     }
 
-    // Fallback: Just return the highest bitrate audio available
-    const anyStream = [...data.streamingUrls].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-    return anyStream.length > 0 ? anyStream[0].url : null;
+    let targetItag = 140; // Default to normal
+    if (audioQuality === 'low') {
+      targetItag = 249;
+    } else if (audioQuality === 'high') {
+      targetItag = 251;
+    }
+
+    // Attempt to find requested quality
+    let stream = data.streamingUrls.find((s: any) => s.itag === targetItag);
+
+    // Fallback 1: 'normal' quality (itag 140)
+    if (!stream) {
+      stream = data.streamingUrls.find((s: any) => s.itag === 140);
+    }
+
+    // Fallback 2: First item in the array
+    if (!stream) {
+      stream = data.streamingUrls[0];
+    }
+
+    return stream.url || stream.directUrl || null;
 
   } catch (err) {
     Logger.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
