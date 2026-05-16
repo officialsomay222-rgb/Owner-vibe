@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Info } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Info, ListPlus, Timer, Wand2, Smartphone, PlayCircle, PlusCircle, Download, SmartphoneNfc } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
@@ -74,17 +74,63 @@ export const MusicPlayer = () => {
     currentSong, isExpanded, setIsExpanded, isPlaying,
     togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
-    favorites, toggleFavorite
+    favorites, toggleFavorite, addToQueue, addToPlaylist
   } = useMusic();
 
   const [isMuted, setIsMuted] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isLofiMode, setIsLofiMode] = useState(false);
+  const [isGestureMode, setIsGestureMode] = useState(false);
 
   const isFavorite = currentSong ? favorites.some(s => s.videoId === currentSong.videoId) : false;
 
   const handleToggleFavorite = () => {
     if (currentSong) {
       toggleFavorite(currentSong);
+    }
+  };
+
+  const handleAddQueue = () => {
+    if (currentSong) {
+      addToQueue(currentSong);
+      setShowMenu(false); // Close menu on success
+    }
+  };
+
+  const handleSleepTimer = () => {
+    // Setting up sleep timer needs its own UI/modal, which we can expand on later if requested
+    Logger.log("Sleep Timer clicked");
+  };
+
+  const handlePlayNext = () => {
+    playNext();
+    setShowMenu(false);
+  };
+
+  const handleAddToPlaylist = () => {
+    if (currentSong) {
+      addToPlaylist(currentSong);
+      setShowMenu(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!currentSong) return;
+    try {
+      const { downloadTrackToVault } = await import('./services/DownloadService');
+
+      const metadata = {
+        title: currentSong.title,
+        artist: currentSong.artist || 'Unknown Artist',
+        coverArt: currentSong.thumbnailUrl || ''
+      };
+
+      // Assuming 'High' as default if not configured, or let DownloadService handle fallback.
+      // Usually quality preference is read from localStorage inside DownloadService, but we pass 'Normal' as default.
+      await downloadTrackToVault(currentSong.videoId, metadata, 'Normal');
+      setShowMenu(false);
+    } catch (err) {
+      Logger.error("Failed to download track:", err);
     }
   };
 
@@ -279,7 +325,7 @@ export const MusicPlayer = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-end justify-center"
             onClick={() => setShowMenu(false)}
         >
             <motion.div
@@ -287,28 +333,92 @@ export const MusicPlayer = () => {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-full bg-[#1c1c1c] rounded-t-[32px] pb-safe"
+                className="w-full bg-[#121212] rounded-t-[32px] pb-safe max-h-[85vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-4" />
-                <div className="p-6 pt-2">
-                    <div className="flex items-center mb-6 pb-6 border-b border-white/10">
-                        <img src={currentSong.thumbnailUrl} alt="Thumbnail" className="w-16 h-16 rounded-xl object-cover mr-4" />
-                        <div>
-                            <h3 className="text-white font-bold text-lg truncate w-60">{currentSong.title}</h3>
-                            <p className="text-white/50 text-sm">{currentSong.artist}</p>
+                <div className="sticky top-0 bg-[#121212] z-10 pt-4 pb-2 px-6">
+                  <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6" />
+
+                  <div className="flex items-center pb-6 border-b border-white/10">
+                      <img src={currentSong.thumbnailUrl} alt="Thumbnail" className="w-16 h-16 rounded-md object-cover mr-4 shadow-lg" />
+                      <div className="flex-1 overflow-hidden">
+                          <h3 className="text-white/90 font-semibold text-[17px] truncate">{currentSong.title}</h3>
+                          <p className="text-white/50 text-[14px] truncate mt-0.5">{currentSong.artist}</p>
+                      </div>
+                  </div>
+                </div>
+
+                <div className="px-4 pb-6 flex flex-col gap-1 mt-2">
+                    {/* Add to queue */}
+                    <button onClick={handleAddQueue} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <ListPlus className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Add to queue</span>
+                    </button>
+
+                    {/* Share */}
+                    <button onClick={handleShare} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <Share2 className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Share</span>
+                    </button>
+
+                    {/* Sleep Timer */}
+                    <button onClick={handleSleepTimer} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <Timer className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Sleep Timer</span>
+                    </button>
+
+                    {/* Lofi Mode Toggle */}
+                    <div className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 cursor-pointer" onClick={() => setIsLofiMode(!isLofiMode)}>
+                        <div className="flex items-center">
+                          <Wand2 className="w-[22px] h-[22px] mr-5 text-white/90" />
+                          <span className="text-[16px] font-medium tracking-wide">Lofi Mode</span>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${isLofiMode ? 'bg-white/20' : 'bg-white/10'}`}>
+                          <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isLofiMode ? 'translate-x-6' : 'translate-x-0'}`} />
                         </div>
                     </div>
 
-                    <button onClick={handleToggleFavorite} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white">
-                        <Heart className={`w-6 h-6 mr-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white/80'}`} />
-                        <span className="text-lg font-medium">{isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+                    {/* Gesture Mode Toggle */}
+                    <div className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 cursor-pointer" onClick={() => setIsGestureMode(!isGestureMode)}>
+                        <div className="flex items-center">
+                          <Smartphone className="w-[22px] h-[22px] mr-5 text-white/90" />
+                          <span className="text-[16px] font-medium tracking-wide">Gesture Mode</span>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${isGestureMode ? 'bg-white/20' : 'bg-white/10'}`}>
+                          <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isGestureMode ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </div>
+                    </div>
+
+                    {/* Play next */}
+                    <button onClick={handlePlayNext} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <PlayCircle className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Play next</span>
                     </button>
 
-                    <button onClick={handleShare} className="w-full flex items-center px-4 py-4 hover:bg-white/5 rounded-2xl transition-colors text-white mt-2">
-                        <Share2 className="w-6 h-6 mr-4 text-white/80" />
-                        <span className="text-lg font-medium">Share</span>
+                    {/* Add to playlist */}
+                    <button onClick={handleAddToPlaylist} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <PlusCircle className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Add to playlist</span>
                     </button>
+
+                    {/* Remove/Add to favorites */}
+                    <button onClick={handleToggleFavorite} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <Heart className={`w-[22px] h-[22px] mr-5 transition-transform group-active:scale-95 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white/90'}`} />
+                        <span className="text-[16px] font-medium tracking-wide">{isFavorite ? 'Remove from favorites' : 'Add to favorites'}</span>
+                    </button>
+
+                    {/* Download */}
+                    <button onClick={handleDownload} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
+                        <Download className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        <span className="text-[16px] font-medium tracking-wide">Download</span>
+                    </button>
+
+                    {/* Info Icon (Bottom Left) */}
+                    <div className="flex px-4 pt-4 pb-2">
+                        <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/70">
+                            <SmartphoneNfc className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </motion.div>
         </motion.div>
