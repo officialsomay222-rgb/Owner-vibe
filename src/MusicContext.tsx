@@ -73,36 +73,14 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    if (audioRef.current && currentSong?.streamUrl) {
+    if (audioRef.current) {
       if (isPlaying) {
         safePlay();
-        MediaSession.setPlaybackState({ playbackState: 'playing' });
-        MediaSession.setPositionState({
-          position: audioRef.current.currentTime,
-          duration: audioRef.current.duration || 0,
-          playbackRate: audioRef.current.playbackRate || 1
-        });
       } else {
         audioRef.current.pause();
-        MediaSession.setPlaybackState({ playbackState: 'paused' });
-        MediaSession.setPositionState({
-          position: audioRef.current.currentTime,
-          duration: audioRef.current.duration || 0,
-          playbackRate: audioRef.current.playbackRate || 1
-        });
       }
     }
-  }, [isPlaying, currentSong?.streamUrl]);
-
-  // Explicitly call load only when streamUrl actually changes
-  // We cannot remove this completely because changing src dynamically doesn't
-  // always trigger the new load properly without it, but we MUST NOT do it when
-  // just play/pause toggles.
-  useEffect(() => {
-    if (audioRef.current && currentSong?.streamUrl) {
-      audioRef.current.load();
-    }
-  }, [currentSong?.streamUrl]);
+  }, [isPlaying]);
 
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
@@ -170,10 +148,18 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     MediaSession.setActionHandler({ action: 'play' }, () => {
       actionsRef.current.setIsPlaying(true);
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => {
+            if (e.name !== 'AbortError') Logger.error('MediaSession Play Error:', e);
+        });
+      }
     });
 
     MediaSession.setActionHandler({ action: 'pause' }, () => {
       actionsRef.current.setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     });
 
     MediaSession.setActionHandler({ action: 'nexttrack' }, () => {
@@ -202,7 +188,16 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         MediaSession.setPositionState({
             position: audio.currentTime,
             duration: audio.duration || 0,
-            playbackRate: audio.playbackRate
+            playbackRate: audio.playbackRate || 1
+        });
+    };
+
+    const handleTimeUpdate = () => {
+        // Sync position to OS media notification roughly every second to keep the seek bar accurate
+        MediaSession.setPositionState({
+            position: audio.currentTime,
+            duration: audio.duration || 0,
+            playbackRate: audio.playbackRate || 1
         });
     };
     const handleEnded = () => {
@@ -216,10 +211,13 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', handleEnded);
+    // Use timeupdate for smooth OS notification seek bar sync
+    audio.addEventListener('timeupdate', handleTimeUpdate);
 
     return () => {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
     };
   }, [queue, currentSong, repeatMode]);
 
@@ -231,7 +229,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
     }
 
     // Instantly update UI with the new song data before fetching stream
@@ -268,7 +267,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (currentIndex < queue.length - 1) {
           if (audioRef.current) {
             audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+            audioRef.current.removeAttribute('src');
+            audioRef.current.load();
           }
           setCurrentSong(queue[currentIndex + 1]);
           setIsPlaying(true);
@@ -276,7 +276,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Loop back to the first song
           if (audioRef.current) {
             audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+            audioRef.current.removeAttribute('src');
+            audioRef.current.load();
           }
           setCurrentSong(queue[0]);
           setIsPlaying(true);
@@ -293,7 +294,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentIndex > 0) {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
       }
       setCurrentSong(queue[currentIndex - 1]);
       setIsPlaying(true);
@@ -301,7 +303,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Go to the last song
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
       }
       setCurrentSong(queue[queue.length - 1]);
       setIsPlaying(true);
@@ -405,7 +408,21 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         onLoadedMetadata={() => Logger.log('2. Audio: Metadata Loaded')}
         onCanPlay={() => {
           Logger.log('3. Audio: Can Play (Buffer ready)');
-          safePlay(); // Trigger our safe play here
+          if (isPlaying) {
+             safePlay(); // Trigger our safe play here
+          }
+        }}
+        onPlay={() => {
+          setIsPlaying(true);
+          MediaSession.setPlaybackState({ playbackState: 'playing' });
+        }}
+        onPause={(e) => {
+          // If readyState is 0, it means the src was changed/cleared, so don't update pause state
+          // as we are probably switching songs and want it to play once loaded.
+          if (e.currentTarget.readyState > 0) {
+            setIsPlaying(false);
+            MediaSession.setPlaybackState({ playbackState: 'paused' });
+          }
         }}
         onWaiting={() => Logger.log('Audio: Waiting for data/buffering...')}
         onStalled={() => Logger.warn('Audio: Stalled (Network issue)')}
