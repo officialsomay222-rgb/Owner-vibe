@@ -46,21 +46,24 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
         <span className="text-[24px] font-bold tracking-widest text-[#f0f0f0] drop-shadow-sm font-serif light:text-gray-900 transition-colors">❍Ꮿꪀꫀ𝚁</span>
         <span className="text-[20px] ml-[2px] font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f0f0f0] to-[#a0a0a0] light:from-gray-900 light:to-gray-500 drop-shadow-sm font-serif italic text-shadow-sm transition-colors">'s Vibe</span>
       </div>
-      <div className="flex items-center justify-center relative translate-y-[1px] ml-1.5" id="verifiedOwnerTick">
-        <div className="absolute inset-0 bg-yellow-500/25 blur-[5px] rounded-full scale-110 transform-gpu will-change-transform"></div>
-        <svg className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] light:drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="goldGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#FFF2B2" />
-                <stop offset="25%" stopColor="#FFD35B" />
-                <stop offset="50%" stopColor="#F6C343" />
-                <stop offset="75%" stopColor="#E2A621" />
-                <stop offset="100%" stopColor="#B37C11" />
-                </linearGradient>
-            </defs>
-            <path d="M11.236 1.439a1.705 1.705 0 0 1 1.528 0l1.79.93a1.71 1.71 0 0 0 1.258.125l1.921-.611a1.705 1.705 0 0 1 2.115 1.155l.56 1.942a1.71 1.71 0 0 0 1.011 1.144l1.868.76a1.705 1.705 0 0 1 .917 2.235l-.837 1.841a1.71 1.71 0 0 0 0 1.265l.837 1.842a1.705 1.705 0 0 1-.917 2.234l-1.87.76a1.71 1.71 0 0 0-1.01 1.144l-.56 1.943a1.705 1.705 0 0 1-2.115 1.154l-1.921-.61a1.708 1.708 0 0 0-1.258.124l-1.79.932a1.705 1.705 0 0 1-1.528 0l-1.79-.932a1.708 1.708 0 0 0-1.258-.124l-1.921.61a1.705 1.705 0 0 1-2.115-1.154l-.56-1.943a1.71 1.71 0 0 0-1.01-1.144l-1.87-.76a1.705 1.705 0 0 1-.918-2.234l.838-1.842a1.71 1.71 0 0 0 0-1.265l-.838-1.841a1.705 1.705 0 0 1 .918-2.235l1.869-.76a1.71 1.71 0 0 0 1.012-1.144l.56-1.942a1.705 1.705 0 0 1 2.115-1.155l1.921.611c.412.13.86-.01 1.258-.125l1.79-.93Z" fill="url(#goldGrad)" stroke="#8A6104" strokeWidth="0.5"/>
-            <path d="M10.25 15.5l-3.25-3.25 1.06-1.06 2.19 2.19 5.44-5.44 1.06 1.06-6.5 6.5z" fill="#0A0A0A" stroke="#0A0A0A" strokeWidth="0.5"/>
-        </svg>
+      <div className="flex items-center justify-center relative translate-y-[1px] ml-1.5 perspective-1000" id="verifiedOwnerTick">
+        <div className="absolute inset-0 bg-yellow-500/30 blur-[6px] rounded-full scale-110 transform-gpu will-change-transform"></div>
+        <div className="relative z-10 w-[22px] h-[22px] animate-spin-y transform-style-3d drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] rounded-full overflow-hidden">
+            {/* The Badge */}
+            <svg viewBox="0 0 24 24" className="w-full h-full absolute inset-0" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="yellowGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#FFE066" />
+                        <stop offset="50%" stopColor="#FFC107" />
+                        <stop offset="100%" stopColor="#FF9800" />
+                    </linearGradient>
+                </defs>
+                <path d="M11.236 1.439a1.705 1.705 0 0 1 1.528 0l1.79.93a1.71 1.71 0 0 0 1.258.125l1.921-.611a1.705 1.705 0 0 1 2.115 1.155l.56 1.942a1.71 1.71 0 0 0 1.011 1.144l1.868.76a1.705 1.705 0 0 1 .917 2.235l-.837 1.841a1.71 1.71 0 0 0 0 1.265l.837 1.842a1.705 1.705 0 0 1-.917 2.234l-1.87.76a1.71 1.71 0 0 0-1.01 1.144l-.56 1.943a1.705 1.705 0 0 1-2.115 1.154l-1.921-.61a1.708 1.708 0 0 0-1.258.124l-1.79.932a1.705 1.705 0 0 1-1.528 0l-1.79-.932a1.708 1.708 0 0 0-1.258-.124l-1.921.61a1.705 1.705 0 0 1-2.115-1.154l-.56-1.943a1.71 1.71 0 0 0-1.01-1.144l-1.87-.76a1.705 1.705 0 0 1-.918-2.234l.838-1.842a1.71 1.71 0 0 0 0-1.265l-.838-1.841a1.705 1.705 0 0 1 .918-2.235l1.869-.76a1.71 1.71 0 0 0 1.012-1.144l.56-1.942a1.705 1.705 0 0 1 2.115-1.155l1.921.611c.412.13.86-.01 1.258-.125l1.79-.93Z" fill="url(#yellowGrad)" />
+                <path d="M10.25 15.5l-3.25-3.25 1.06-1.06 2.19 2.19 5.44-5.44 1.06 1.06-6.5 6.5z" fill="#00d2ff" stroke="#00d2ff" strokeWidth="0.5"/>
+            </svg>
+            {/* The Glossy Shine Overlay */}
+            <div className="absolute top-0 bottom-0 w-[150%] bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[-20deg] animate-glossy-shine pointer-events-none z-20 mix-blend-overlay"></div>
+        </div>
       </div>
     </div>
     
