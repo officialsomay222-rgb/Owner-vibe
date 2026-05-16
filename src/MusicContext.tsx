@@ -29,7 +29,9 @@ interface MusicContextType {
   favorites: Song[];
   toggleFavorite: (song: Song) => void;
   addToQueue: (song: Song) => void;
-  addToPlaylist: (song: Song) => void;
+  addToPlaylist: (song: Song, playlistId?: string) => void;
+  showPlaylistModal: (song: Song) => void;
+  customPlaylists: any[];
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -53,6 +55,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
   const [playHistory, setPlayHistory] = useLocalStorage<Song[]>('playHistory', []);
   const [favorites, setFavorites] = useLocalStorage<Song[]>('favorites', []);
+
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [songToAdd, setSongToAdd] = useState<Song | null>(null);
+  const [customPlaylists, setCustomPlaylists] = useLocalStorage<any[]>('custom_playlists', []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -350,10 +356,25 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const addToPlaylist = (song: Song) => {
-    // We would typically show a playlist selector modal here,
-    // but for now, we'll log it as a placeholder until the user requests full playlist management
-    Logger.log("Added to playlist:", song.title);
+  const showPlaylistModal = (song: Song) => {
+    setSongToAdd(song);
+    setIsPlaylistModalOpen(true);
+  };
+
+  const addToPlaylist = (song: Song, playlistId?: string) => {
+    if (!playlistId) return;
+
+    setCustomPlaylists((prev: any[]) => prev.map(p => {
+      if (p.id === playlistId) {
+        // Check if track is already in playlist
+        if (p.tracks && p.tracks.some((t: any) => t.videoId === song.videoId)) return p;
+
+        return { ...p, tracks: [song, ...(p.tracks || [])] };
+      }
+      return p;
+    }));
+    setIsPlaylistModalOpen(false);
+    setSongToAdd(null);
   };
 
   const toggleRepeat = () => {
@@ -397,9 +418,44 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       favorites,
       toggleFavorite,
       addToQueue,
-      addToPlaylist
+      addToPlaylist,
+      showPlaylistModal,
+      customPlaylists
     }}>
       {children}
+
+      {/* Playlist Selector Modal */}
+      {isPlaylistModalOpen && songToAdd && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsPlaylistModalOpen(false)}>
+          <div className="bg-[#1a1a1a] w-full max-w-[320px] rounded-3xl overflow-hidden shadow-2xl flex flex-col p-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <h3 className="text-white font-bold text-lg mb-4 text-center">Add to Playlist</h3>
+
+            <div className="max-h-[300px] overflow-y-auto no-scrollbar flex flex-col space-y-2">
+              {customPlaylists.length === 0 ? (
+                <div className="text-center text-[#888] py-4 text-sm">No custom playlists yet. Create one in your Library.</div>
+              ) : (
+                customPlaylists.map((playlist: any) => (
+                  <button
+                    key={playlist.id}
+                    onClick={() => addToPlaylist(songToAdd, playlist.id)}
+                    className="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 active:scale-95 transition-all text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/5">
+                      <img src={playlist.tracks && playlist.tracks.length > 0 ? playlist.tracks[0].thumbnailUrl : playlist.img} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex flex-col flex-1 truncate">
+                      <span className="text-white font-bold text-sm truncate">{playlist.title}</span>
+                      <span className="text-[#888] text-[12px]">{playlist.tracks ? playlist.tracks.length : 0} tracks</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <button onClick={() => setIsPlaylistModalOpen(false)} className="mt-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-sm transition-colors">Cancel</button>
+          </div>
+        </div>
+      )}
       <audio
         ref={audioRef}
         src={currentSong?.streamUrl || ''}
