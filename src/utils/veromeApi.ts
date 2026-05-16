@@ -1,7 +1,7 @@
 import { Song } from '../types';
 import { Logger } from './logger';
 
-const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
+export const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
 export interface DetailsData {
   title: string;
