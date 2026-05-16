@@ -5,6 +5,7 @@ import { MediaSession } from '@capgo/capacitor-media-session';
 import { Logger } from './utils/logger';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface MusicContextType {
   currentSong: Song | null;
@@ -93,14 +94,39 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
     if (currentSong && currentSong.localPath) {
-       if (Capacitor.isNativePlatform()) {
-         setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
-       } else {
-         setOfflineUrl(currentSong.localPath);
-       }
-       return; // skip fetching stream for offline tracks
+      if (Capacitor.isNativePlatform()) {
+        setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
+      } else {
+        // Read file dynamically from IndexedDB via Filesystem for web platforms
+        const readLocalFile = async () => {
+          try {
+            const result = await Filesystem.readFile({
+              path: currentSong.localPath!,
+              directory: Directory.Data
+            });
+            const base64Data = result.data as string;
+            // Decode base64 to Blob
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            // We use standard MIME types, fallback to audio/webm
+            const type = currentSong.localPath!.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
+            const blob = new Blob([byteArray], { type });
+            const objectUrl = URL.createObjectURL(blob);
+            setOfflineUrl(objectUrl);
+          } catch (err) {
+            Logger.error("Failed to read local file from Filesystem on web:", err);
+            setOfflineUrl('');
+          }
+        };
+        readLocalFile();
+      }
+      return; // skip fetching stream for offline tracks
     } else {
-       setOfflineUrl('');
+      setOfflineUrl('');
     }
 
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
