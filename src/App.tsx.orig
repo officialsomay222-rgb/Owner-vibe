@@ -5,9 +5,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Toggle, Select, ActionButton } from './components/SettingsUI';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { 
-    Home, Search, Library, Settings, MoreVertical, 
-    Share2, CircleHelp, History, ArrowUpLeft, 
+import {
+    Home, Search, Library, Settings, MoreVertical,
+    Share2, CircleHelp, History, ArrowUpLeft,
     Plus, Heart, Plane, ArrowDown, ListFilter,
     Palette, ListVideo, Music, HardDrive, LayoutGrid, Info, ChevronDown, X, Play
 } from 'lucide-react';
@@ -63,7 +63,7 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
         </svg>
       </div>
     </div>
-    
+
     <div className="flex items-center space-x-6 text-gray-300 light:text-gray-600">
       <CircleHelp className="w-6 h-6 hover:text-white light:hover:text-black hover:scale-110 transition-all cursor-pointer" />
       <Share2 className="w-[22px] h-[22px] hover:text-white light:hover:text-black hover:scale-110 transition-all cursor-pointer" />
@@ -73,7 +73,6 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
 
 const HomeTab = () => {
     const { playSong, playHistory } = useMusic();
-    const { sections, isLoading } = useHomeData(playHistory);
 
     // 1. Prepare data for Top 2x3 Grid (6 items)
     // Prioritize playHistory, then favorites, then fallback to discoverSongs
@@ -97,6 +96,12 @@ const HomeTab = () => {
 
     // 2. Prepare data for "Recently Played" row
     const recentItems = playHistory.length > 0 ? playHistory.slice(0, 15) : discoverSongs;
+
+    // 3. Prepare data for "Jump back in" / "Suggested" row
+    // We'll use recommendedPlaylists, and maybe mix in some history if available
+    const jumpBackInItems = playHistory.length > 0
+        ? [...playHistory].reverse().slice(0, 10) // Mocking suggestions by reversing history
+        : recommendedPlaylists.map(p => ({ videoId: '', title: p.title, artist: p.subtitle, thumbnailUrl: p.img, isMock: true }));
 
     return (
     <div className="flex flex-col pt-[84px] pb-32 px-4 space-y-8 animate-in fade-in duration-500">
@@ -145,37 +150,45 @@ const HomeTab = () => {
             </div>
         </section>
 
-        {/* Dynamic Sections */}
-        {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-            </div>
-        ) : (
-            sections.map((section, idx) => (
-                <section key={`section-${idx}`}>
-                    <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-4 tracking-tight pl-1 capitalize">{section.title}</h2>
-                    <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
-                        {section.items.map((item, itemIdx) => {
-                            const songItem = { ...item, videoId: item.id } as any;
-                            return (
-                                <div key={`dyn-${item.id}-${itemIdx}`}
-                                     onClick={() => playSong(songItem, section.items.map(i => ({...i, videoId: i.id})) as any[])}
-                                     className="flex-none w-[140px] flex flex-col group cursor-pointer snap-start active:scale-95 transition-transform duration-300">
-                                    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm">
-                                        <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                            <Play className="w-10 h-10 text-white fill-white ml-1 drop-shadow-md" />
-                                        </div>
-                                    </div>
-                                    <span className="text-white/95 light:text-gray-900 transition-colors text-[14px] font-bold tracking-wide leading-tight line-clamp-2 px-1">{item.title}</span>
-                                    {item.artist && <span className="text-[#888] light:text-gray-500 transition-colors text-[12px] font-medium mt-1 truncate px-1">{item.artist}</span>}
-                                </div>
-                            );
-                        })}
+        {/* Jump back in Row */}
+        <section>
+            <h2 className="text-[22px] font-bold text-white/95 light:text-gray-900 transition-colors mb-4 tracking-tight pl-1">Jump back in</h2>
+            <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
+                {jumpBackInItems.map((item: any, idx) => (
+                    <div key={`jump-${item.videoId || item.id || item.title}-${idx}`}
+                         onClick={() => {
+                             if (!item.isMock) {
+                                 playSong(item as any, jumpBackInItems.filter((i: any) => !i.isMock) as any[]);
+                             }
+                         }}
+                         className="flex-none w-[140px] flex flex-col group cursor-pointer snap-start active:scale-95 transition-transform duration-300">
+                        <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-3 shadow-[0_8px_20px_rgba(0,0,0,0.5)] light:shadow-sm">
+                            <img src={item.thumbnailUrl || item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <Play className="w-10 h-10 text-white fill-white ml-1 drop-shadow-md" />
+                            </div>
+                        </div>
+                        <span className="text-white/95 light:text-gray-900 transition-colors text-[14px] font-bold tracking-wide leading-tight line-clamp-2 px-1">{item.title}</span>
+                        {item.artist && <span className="text-[#888] light:text-gray-500 transition-colors text-[12px] font-medium mt-1 truncate px-1">{item.artist}</span>}
                     </div>
-                </section>
-            ))
-        )}
+                ))}
+            </div>
+        </section>
+
+        {/* Suggested Artists / SCARIONIX Fallback */}
+        <section>
+            <h2 className="text-[17px] font-bold text-white/70 light:text-gray-500 transition-colors uppercase mb-4 tracking-[0.2em] pl-1">Suggested for you</h2>
+            <div className="flex overflow-x-auto space-x-4 no-scrollbar pb-4 -mx-4 px-4 snap-x">
+                {scarionixAlbums.map(album => (
+                    <div key={album.id} className="relative flex-none w-[140px] aspect-square rounded-full overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.6)] light:shadow-md snap-start cursor-pointer active:scale-95 transition-transform duration-300 group">
+                        <img src={album.img} alt="Artist" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <Play className="w-8 h-8 text-white fill-white ml-1" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
 
     </div>
   );
@@ -185,7 +198,6 @@ import { useYouTubeSearch } from './hooks/useYouTubeSearch';
 import type { SearchResultItem } from './types';
 import { fetchPlaylistDetails, fetchAlbumDetails, fetchArtistDetails, DetailsData } from './utils/veromeApi';
 import type { Song } from './types';
-import { useHomeData } from './hooks/useHomeData';
 
 const SearchTab = () => {
     const [query, setQuery] = useState('');
@@ -519,7 +531,7 @@ const LibraryTab = () => {
                 <Plus className="w-[22px] h-[22px]" />
             </button>
         </div>
-        
+
         <div className="flex space-x-8 border-b border-white/[0.04] light:border-black/[0.06] pb-0 mb-8 overflow-x-auto no-scrollbar pl-1">
             {['Playlists', 'Songs', 'Albums', 'Artists'].map(tab => (
                 <button
@@ -531,7 +543,7 @@ const LibraryTab = () => {
                 </button>
             ))}
         </div>
-        
+
         <div className="flex items-center justify-between mb-8 pl-1">
             <div className="flex items-center text-[#777] light:text-gray-500 transition-colors space-x-3 text-[13px] bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-1.5 rounded-[12px] border border-white/[0.04] light:border-black/[0.06]">
                <span className="font-medium tracking-wide">{myPlaylists.length} items</span>
@@ -653,14 +665,14 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
     return (
         <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-8 tracking-tight pl-1">Settings</h2>
-            
+
             <div className="flex flex-col bg-white/[0.01] border border-white/[0.05] light:bg-white/80 light:border-black/[0.06] rounded-[24px] shadow-lg transition-colors overflow-hidden">
                 {settingsItems.map((item, index) => {
                     const Icon = item.icon;
                     const isExpanded = expandedMenu === item.id;
                     return (
                         <div key={item.id} className="flex flex-col">
-                            <div 
+                            <div
                                 onClick={() => setExpandedMenu(isExpanded ? null : item.id)}
                                 className={`flex px-5 py-[20px] items-center justify-between cursor-pointer hover:bg-white/[0.04] active:bg-white/[0.06] light:hover:bg-black/[0.03] light:active:bg-black/[0.05] transition-all duration-300 group ${index !== settingsItems.length - 1 ? 'border-b border-white/[0.03] light:border-black/[0.04]' : ''}`}
                             >
@@ -672,7 +684,7 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
                                 </div>
                                 <ChevronDown className={`w-5 h-5 text-[#555] group-hover:text-[#888] light:text-gray-400 light:group-hover:text-gray-600 transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
-                            
+
                             <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[1000px] opacity-100 border-b border-white/[0.03] light:border-black/[0.04] bg-white/[0.015] light:bg-black/[0.01]' : 'max-h-0 opacity-0'}`}>
                                 <div className="p-6 flex flex-col space-y-2">
                                     {item.id === 'personalisation' && (
@@ -801,7 +813,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     if (theme === 'light' || (theme === 'system' && !isDark)) {
       root.classList.add('light');
     } else {
@@ -813,7 +825,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       if (theme === 'system') {
         if (!e.matches) {
@@ -823,7 +835,7 @@ export default function App() {
         }
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
@@ -854,7 +866,7 @@ export default function App() {
     <div className="h-full w-full app-wrapper pl-safe pr-safe bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] text-[#eaeaea] selection:bg-cyan-500/30 font-sans light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] light:text-gray-900 transition-colors duration-500">
       <div className="edge-to-edge-bg bg-[#020202] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-[#020202] to-[#000] light:bg-[#f8f9fa] light:from-[#ffffff] light:via-[#f8f9fa] light:to-[#e5e7eb] transition-colors duration-500"></div>
       <Header isVisible={showHeader} />
-      
+
       <main className="w-full max-w-md mx-auto relative min-h-screen overflow-x-hidden pt-1">
         {activeTab === 'home' && <HomeTab />}
         {activeTab === 'search' && <SearchTab />}
@@ -883,9 +895,9 @@ export default function App() {
 
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            
+
             return (
-              <button 
+              <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id!)}
                 className={`flex flex-col items-center justify-center space-y-1.5 focus:outline-none w-16 group h-full active:scale-95 duration-500 ease-out transition-transform ${isActive ? '-translate-y-1' : ''}`}
@@ -904,4 +916,3 @@ export default function App() {
     </div>
   );
 }
-
