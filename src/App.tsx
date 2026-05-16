@@ -9,7 +9,7 @@ import {
     Home, Search, Library, Settings, MoreVertical, 
     Share2, CircleHelp, History, ArrowUpLeft, 
     Plus, Heart, Plane, ArrowDown, ListFilter,
-    Palette, ListVideo, Music, HardDrive, LayoutGrid, Info, ChevronDown, X, Play
+    Palette, ListVideo, Music, HardDrive, LayoutGrid, Info, ChevronDown, X, Play, Download
 } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { MusicPlayer } from './MusicPlayer';
@@ -436,10 +436,11 @@ const SearchTab = () => {
 
 const LibraryTab = () => {
     const [activeSection, setActiveSection] = useState('Playlists');
-    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites'>('main');
+    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites' | 'downloads'>('main');
 
     // Using mock data for demonstration
     const { playSong, playHistory, favorites } = useMusic();
+    const [offlineVault] = useLocalStorage<any[]>('offline_vault', []);
     const myPlaylists = [
         { id: 1, title: 'Gym Motivation', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200', views: '398 MILLION VIEWS' },
         { id: 2, title: 'Late Night Vibes', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200' },
@@ -523,6 +524,56 @@ const LibraryTab = () => {
         );
     }
 
+    if (libraryView === 'downloads') {
+        const downloadQueue = offlineVault.map(t => ({
+            videoId: t.songId,
+            title: t.metadata.title,
+            artist: t.metadata.artist,
+            thumbnailUrl: t.metadata.coverArt,
+            isOffline: true,
+            filePath: t.filePath
+        }));
+
+        return (
+            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
+                <button onClick={() => setLibraryView('main')} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
+                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
+                    <span className="font-medium">Back</span>
+                </button>
+                <div className="flex items-center justify-between mb-8 pl-1">
+                    <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Downloads</h2>
+                </div>
+                <div className="flex flex-col space-y-3">
+                    {offlineVault.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <Download className="w-16 h-16 text-white/20 light:text-black/20 mb-4" />
+                            <span className="text-white/80 light:text-gray-700 font-semibold text-lg">No downloads found</span>
+                            <span className="text-[#888] light:text-gray-500 text-sm mt-2 max-w-[250px]">Songs you download will appear here.</span>
+                        </div>
+                    ) : (
+                        downloadQueue.map((track, i) => (
+                            <div key={i} onClick={() => playSong(track, downloadQueue)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.05] light:hover:bg-black/[0.05] group cursor-pointer transition-all duration-300">
+                                <div className="flex items-center space-x-4">
+                                    <span className="text-[#666] light:text-gray-400 font-medium w-4 text-right text-[13px]">{i + 1}</span>
+                                    <div className="relative w-12 h-12 rounded-md overflow-hidden shrink-0">
+                                        <img src={track.thumbnailUrl} alt={track.title} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col max-w-[180px]">
+                                        <span className="text-white/95 light:text-gray-900 text-[15px] font-bold tracking-wide leading-tight line-clamp-1">{track.title}</span>
+                                        <span className="text-[#888] light:text-gray-500 text-[13px] font-medium line-clamp-1 mt-0.5">{track.artist}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
         <div className="flex items-center justify-between mb-8 pl-1">
@@ -572,23 +623,12 @@ const LibraryTab = () => {
                </div>
                <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Favorites</span>
            </div>
-           <div className="flex flex-col cursor-pointer group">
-               <motion.div
-                   className="w-full aspect-square bg-transparent flex items-center justify-center mb-3.5 group-active:scale-[0.97] transition-all duration-300 relative"
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-               >
-                   <div className="rgb-border-wrapper w-full h-full max-w-[80px] max-h-[80px]">
-                       <div className="rgb-content w-full h-full">
-                           <img
-                               src="/assets/profile-image.jpg"
-                               alt="Profile"
-                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                           />
-                       </div>
-                   </div>
-               </motion.div>
-               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Cached/Offline</span>
+           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('downloads')}>
+               <div className="w-full aspect-square bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 light:from-emerald-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-emerald-500/20 light:border-emerald-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-emerald-500/40 light:group-hover:border-emerald-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <Download className="w-[42px] h-[42px] text-emerald-500 light:text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
+               </div>
+               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Downloads</span>
            </div>
         </div>
 

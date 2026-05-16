@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Info, ListPlus, Timer, Wand2, Smartphone, PlayCircle, PlusCircle, Download, SmartphoneNfc } from 'lucide-react';
+import { ChevronDown, Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, Volume2, VolumeX, MoreVertical, Heart, Share2, Info, ListPlus, Timer, Wand2, Smartphone, PlayCircle, PlusCircle, Download, SmartphoneNfc, CheckCircle2 } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useColor } from 'color-thief-react';
 import { Capacitor } from '@capacitor/core';
 import { useAudioTime } from './hooks/useAudioTime';
 import { Logger } from './utils/logger';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 const formatTime = (time: number) => {
   if (isNaN(time)) return '0:00';
@@ -81,8 +82,12 @@ export const MusicPlayer = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [isLofiMode, setIsLofiMode] = useState(false);
   const [isGestureMode, setIsGestureMode] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const [offlineVault, setOfflineVault] = useLocalStorage<any[]>('offline_vault', []);
 
   const isFavorite = currentSong ? favorites.some(s => s.videoId === currentSong.videoId) : false;
+  const isDownloaded = currentSong ? offlineVault.some(t => t.songId === currentSong.videoId) : false;
 
   const handleToggleFavorite = () => {
     if (currentSong) {
@@ -115,8 +120,9 @@ export const MusicPlayer = () => {
   };
 
   const handleDownload = async () => {
-    if (!currentSong) return;
+    if (!currentSong || isDownloaded || isDownloading) return;
     try {
+      setIsDownloading(true);
       const { downloadTrackToVault } = await import('./services/DownloadService');
 
       const metadata = {
@@ -125,12 +131,20 @@ export const MusicPlayer = () => {
         coverArt: currentSong.thumbnailUrl || ''
       };
 
-      // Assuming 'High' as default if not configured, or let DownloadService handle fallback.
-      // Usually quality preference is read from localStorage inside DownloadService, but we pass 'Normal' as default.
-      await downloadTrackToVault(currentSong.videoId, metadata, 'Normal');
-      setShowMenu(false);
+      // Force refresh the localStorage state in this component to re-render the checkmark
+      const track = await downloadTrackToVault(currentSong.videoId, metadata, 'Normal');
+
+      // Update local storage hook state manually to trigger UI update
+      setOfflineVault(prev => {
+        const filtered = prev.filter(t => t.songId !== track.songId);
+        return [...filtered, track];
+      });
+
+      setIsDownloading(false);
+      // Let it stay open so user sees it change to checked, or close it if preferred.
     } catch (err) {
       Logger.error("Failed to download track:", err);
+      setIsDownloading(false);
     }
   };
 
@@ -408,9 +422,17 @@ export const MusicPlayer = () => {
                     </button>
 
                     {/* Download */}
-                    <button onClick={handleDownload} className="w-full flex items-center px-4 py-3.5 hover:bg-white/5 rounded-2xl transition-colors text-white/90 group">
-                        <Download className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
-                        <span className="text-[16px] font-medium tracking-wide">Download</span>
+                    <button onClick={handleDownload} disabled={isDownloaded || isDownloading} className={`w-full flex items-center px-4 py-3.5 rounded-2xl transition-colors group ${isDownloaded ? 'opacity-100' : 'hover:bg-white/5 text-white/90'} ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        {isDownloaded ? (
+                            <CheckCircle2 className="w-[22px] h-[22px] mr-5 text-emerald-400 group-active:scale-95 transition-transform" />
+                        ) : isDownloading ? (
+                            <div className="w-[22px] h-[22px] mr-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                            <Download className="w-[22px] h-[22px] mr-5 text-white/90 group-active:scale-95 transition-transform" />
+                        )}
+                        <span className={`text-[16px] font-medium tracking-wide ${isDownloaded ? 'text-emerald-400' : ''}`}>
+                            {isDownloaded ? 'Downloaded' : isDownloading ? 'Downloading...' : 'Download'}
+                        </span>
                     </button>
 
                     {/* Info Icon (Bottom Left) */}
