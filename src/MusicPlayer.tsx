@@ -236,7 +236,7 @@ export const MusicPlayer = () => {
           {/* Removed the heavy blur image completely for a much cleaner Spotify/Apple Music gradient look */}
 
           {/* Header */}
-          <div className="relative w-full flex items-center justify-between px-6 pt-safe pb-4 mt-4">
+          <div className="relative w-full flex items-center justify-between px-6 pt-safe pb-4 mt-4 landscape:mb-0 landscape:pb-0 z-10">
             <button
               onClick={() => setIsExpanded(false)}
               className="p-2 -ml-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
@@ -253,95 +253,100 @@ export const MusicPlayer = () => {
           </div>
 
           {/* Main Content */}
-          <div className="relative flex-1 w-full max-w-md flex flex-col px-8 pb-10 mt-6">
-            {/* Album Art */}
-            <motion.div
-              className="w-full aspect-square rounded-[32px] overflow-hidden shadow-2xl mb-10"
-              style={{
-                boxShadow: `0 20px 50px -10px ${dominantColor}88` // Dynamic glow
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <img
-                src={highResThumb}
-                alt={currentSong.title}
-                className="w-full h-full object-cover"
-                crossOrigin="anonymous" // needed for color extraction if done directly, but we use proxy above. still good practice
-              />
-            </motion.div>
-
-            {/* Song Info */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex-1 overflow-hidden">
-                <h2 className="text-3xl font-bold truncate mb-1 text-white">{currentSong.title}</h2>
-                <p className="text-xl text-white/70 truncate">{currentSong.artist}</p>
-              </div>
-              <button
-                onClick={handleToggleFavorite}
-                className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
-              >
-                <Heart
-                  className={`w-7 h-7 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
-                />
-              </button>
+          <div className="relative flex-1 w-full max-w-md landscape:max-w-4xl flex flex-col landscape:flex-row landscape:items-center px-8 landscape:px-12 pb-10 landscape:pb-4 mt-6 landscape:mt-2">
+            {/* Left Side: Album Art (Landscape) / Top: Album Art (Portrait) */}
+            <div className="w-full landscape:w-1/2 landscape:pr-8 flex items-center justify-center">
+                <motion.div
+                  className="w-full max-w-[320px] landscape:max-w-[400px] aspect-square rounded-[32px] overflow-hidden shadow-2xl mb-10 landscape:mb-0"
+                  style={{
+                    boxShadow: `0 20px 50px -10px ${dominantColor}88` // Dynamic glow
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <img
+                    src={highResThumb}
+                    alt={currentSong.title}
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous" // needed for color extraction if done directly, but we use proxy above. still good practice
+                  />
+                </motion.div>
             </div>
 
-            {/* Premium Seek Bar */}
-            <ProgressBar duration={duration} dominantColor={dominantColor} seekTo={seekTo} audioRef={audioRef} />
+            {/* Right Side: Info & Controls (Landscape) / Bottom: Info & Controls (Portrait) */}
+            <div className="w-full landscape:w-1/2 flex flex-col justify-center">
+                {/* Song Info */}
+                <div className="flex items-center justify-between mb-8 landscape:mb-4">
+                  <div className="flex-1 overflow-hidden">
+                    <h2 className="text-3xl landscape:text-2xl font-bold truncate mb-1 text-white">{currentSong.title}</h2>
+                    <p className="text-xl landscape:text-lg text-white/70 truncate">{currentSong.artist}</p>
+                  </div>
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
+                  >
+                    <Heart
+                      className={`w-7 h-7 landscape:w-6 landscape:h-6 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
+                    />
+                  </button>
+                </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-between mb-8 px-2">
-              <button
-                onClick={toggleShuffle}
-                className={`p-3 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
-                style={{ color: isShuffle ? dominantColor : undefined }}
-              >
-                <Shuffle className="w-6 h-6" />
-              </button>
+                {/* Premium Seek Bar */}
+                <ProgressBar duration={duration} dominantColor={dominantColor} seekTo={seekTo} audioRef={audioRef} />
 
-              <button
-                onClick={playPrevious}
-                className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
-              >
-                <SkipBack className="w-10 h-10 fill-current" />
-              </button>
+                {/* Controls */}
+                <div className="flex items-center justify-between mb-8 landscape:mb-4 px-2 landscape:px-0">
+                  <button
+                    onClick={toggleShuffle}
+                    className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
+                    style={{ color: isShuffle ? dominantColor : undefined }}
+                  >
+                    <Shuffle className="w-6 h-6 landscape:w-5 landscape:h-5" />
+                  </button>
 
-              <button
-                onClick={togglePlayPause}
-                className="p-5 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl"
-                style={{ backgroundColor: dominantColor, color: '#fff' }}
-              >
-                {isPlaying ? (
-                  <Pause className="w-10 h-10 fill-current" />
-                ) : (
-                  <Play className="w-10 h-10 fill-current translate-x-1" />
-                )}
-              </button>
+                  <button
+                    onClick={playPrevious}
+                    className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                  >
+                    <SkipBack className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
+                  </button>
 
-              <button
-                onClick={playNext}
-                className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
-              >
-                <SkipForward className="w-10 h-10 fill-current" />
-              </button>
+                  <button
+                    onClick={togglePlayPause}
+                    className="p-5 landscape:p-4 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-xl"
+                    style={{ backgroundColor: dominantColor, color: '#fff' }}
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
+                    ) : (
+                      <Play className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current translate-x-1" />
+                    )}
+                  </button>
 
-              <button
-                onClick={toggleRepeat}
-                className={`p-3 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
-                style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
-              >
-                <Repeat className="w-6 h-6" />
-              </button>
-            </div>
+                  <button
+                    onClick={playNext}
+                    className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                  >
+                    <SkipForward className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
+                  </button>
 
-            {/* Volume & Extras */}
-            <div className="flex items-center justify-between px-6 text-white/50">
-                <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
-                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-                <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
-                    <Share2 className="w-5 h-5" />
-                </button>
+                  <button
+                    onClick={toggleRepeat}
+                    className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
+                    style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
+                  >
+                    <Repeat className="w-6 h-6 landscape:w-5 landscape:h-5" />
+                  </button>
+                </div>
+
+                {/* Volume & Extras */}
+                <div className="flex items-center justify-between px-6 landscape:px-2 text-white/50">
+                    <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
+                        {isMuted ? <VolumeX className="w-5 h-5 landscape:w-4 landscape:h-4" /> : <Volume2 className="w-5 h-5 landscape:w-4 landscape:h-4" />}
+                    </button>
+                    <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
+                        <Share2 className="w-5 h-5 landscape:w-4 landscape:h-4" />
+                    </button>
+                </div>
             </div>
           </div>
         </motion.div>
