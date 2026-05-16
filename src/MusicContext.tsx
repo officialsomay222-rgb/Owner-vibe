@@ -151,33 +151,45 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [currentSong]);
 
-  // Bind Native Media Session Actions
+  // Ref to hold the latest actions so we don't have to rebind MediaSession on every state change
+  const actionsRef = useRef({ playNext: () => {}, playPrevious: () => {}, setIsPlaying: (val: boolean) => {}, seekTo: (t: number) => {} });
+
+  // Update the ref with the latest functions
+  useEffect(() => {
+    actionsRef.current = {
+      playNext: playNext,
+      playPrevious: playPrevious,
+      setIsPlaying: setIsPlaying,
+      seekTo: seekTo
+    };
+  }, [queue, currentSong, repeatMode, isShuffle, isPlaying, duration]);
+
+  // Bind Native Media Session Actions ONCE
   useEffect(() => {
     MediaSession.setActionHandler({ action: 'play' }, () => {
-      setIsPlaying(true);
+      actionsRef.current.setIsPlaying(true);
     });
 
     MediaSession.setActionHandler({ action: 'pause' }, () => {
-      setIsPlaying(false);
+      actionsRef.current.setIsPlaying(false);
     });
 
     MediaSession.setActionHandler({ action: 'nexttrack' }, () => {
-      playNext();
+      actionsRef.current.playNext();
     });
 
     MediaSession.setActionHandler({ action: 'previoustrack' }, () => {
-      playPrevious();
+      actionsRef.current.playPrevious();
     });
 
     MediaSession.setActionHandler({ action: 'seekto' }, (details) => {
       if (details && typeof details.seekTime === 'number') {
-        seekTo(details.seekTime);
+        actionsRef.current.seekTo(details.seekTime);
       }
     });
 
     // We don't remove action handlers here as we want them always bound.
-    // In @capgo/capacitor-media-session, subsequent calls overwrite the handlers.
-  }, [queue, currentSong, repeatMode, isShuffle, isPlaying, duration]); // dependencies to ensure handlers use latest state via closures (especially playNext/playPrevious)
+  }, []); // Empty dependency array so bindings happen only once
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -217,6 +229,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
 
     // Instantly update UI with the new song data before fetching stream
@@ -251,12 +264,18 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (currentIndex !== -1) {
         if (currentIndex < queue.length - 1) {
-          if (audioRef.current) audioRef.current.pause();
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
           setCurrentSong(queue[currentIndex + 1]);
           setIsPlaying(true);
         } else if (repeatMode === 'all') {
           // Loop back to the first song
-          if (audioRef.current) audioRef.current.pause();
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
           setCurrentSong(queue[0]);
           setIsPlaying(true);
         } else {
@@ -270,12 +289,18 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const currentIndex = queue.findIndex(s => s.videoId === currentSong.videoId);
 
     if (currentIndex > 0) {
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setCurrentSong(queue[currentIndex - 1]);
       setIsPlaying(true);
     } else if (repeatMode === 'all') {
       // Go to the last song
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setCurrentSong(queue[queue.length - 1]);
       setIsPlaying(true);
     }

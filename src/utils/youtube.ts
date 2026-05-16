@@ -3,6 +3,11 @@ import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
+// Cache to prevent redundant stream API requests for previously played songs
+// Caches expire after 1 hour (3600000 ms) since signed URLs often expire
+const streamUrlCache = new Map<string, { url: string, timestamp: number }>();
+const CACHE_TTL = 3600000;
+
 /**
  * Searches YouTube Music for a given query using the Verome API and maps it to a unified SearchResultItem type.
  */
@@ -86,6 +91,11 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
  * Uses the requested audio quality preference from local storage.
  */
 export async function getYouTubeAudioStream(videoId: string): Promise<string | null> {
+  const cached = streamUrlCache.get(videoId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.url;
+  }
+
   try {
     const response = await fetch(`${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`);
 
@@ -129,7 +139,13 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
       stream = data.streamingUrls[0];
     }
 
-    return stream.url || stream.directUrl || null;
+    const finalUrl = stream.url || stream.directUrl || null;
+
+    if (finalUrl) {
+      streamUrlCache.set(videoId, { url: finalUrl, timestamp: Date.now() });
+    }
+
+    return finalUrl;
 
   } catch (err) {
     Logger.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
