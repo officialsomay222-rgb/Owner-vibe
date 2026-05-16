@@ -67,6 +67,8 @@ export const MiniPlayer = () => {
                 }
               }}
               disabled={isLoadingStream}
+              aria-label={isLoadingStream ? "Loading audio stream" : isPlaying ? "Pause" : "Play"}
+              title={isLoadingStream ? "Loading..." : isPlaying ? "Pause" : "Play"}
               className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
               {isLoadingStream ? (
@@ -82,6 +84,8 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
+              aria-label="Skip to next track"
+              title="Next Track"
               className="p-2 text-white hover:text-white/80 transition-colors"
             >
               <SkipForward className="w-6 h-6 fill-current" />
