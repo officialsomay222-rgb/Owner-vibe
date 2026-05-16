@@ -88,8 +88,21 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isPlaying]);
 
+  const [offlineUrl, setOfflineUrl] = useState<string>('');
+
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
+    if (currentSong && currentSong.localPath) {
+       if (Capacitor.isNativePlatform()) {
+         setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
+       } else {
+         setOfflineUrl(currentSong.localPath);
+       }
+       return; // skip fetching stream for offline tracks
+    } else {
+       setOfflineUrl('');
+    }
+
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
       const fetchStream = async () => {
         try {
@@ -458,7 +471,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )}
       <audio
         ref={audioRef}
-        src={currentSong?.streamUrl || ''}
+        src={offlineUrl || currentSong?.streamUrl || ''}
         playsInline={true}
         onLoadStart={() => Logger.log('1. Audio: Load Started')}
         onLoadedMetadata={() => Logger.log('2. Audio: Metadata Loaded')}
