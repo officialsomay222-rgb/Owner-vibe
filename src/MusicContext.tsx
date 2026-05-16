@@ -5,6 +5,7 @@ import { MediaSession } from '@capgo/capacitor-media-session';
 import { Logger } from './utils/logger';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface MusicContextType {
   currentSong: Song | null;
@@ -92,13 +93,53 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
+    let activeObjectUrl: string | null = null;
+    let isCancelled = false;
+
     if (currentSong && currentSong.localPath) {
        if (Capacitor.isNativePlatform()) {
          setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
        } else {
-         setOfflineUrl(currentSong.localPath);
+         // On the web, we must read the file from IndexedDB (via Capacitor Filesystem),
+         // convert the base64 to a Blob, and generate an Object URL.
+         const loadWebOfflineAudio = async () => {
+           try {
+             const result = await Filesystem.readFile({
+               path: currentSong.localPath!,
+               directory: Directory.Data
+             });
+
+             if (isCancelled) return;
+
+             // Extract base64 and create a blob
+             const base64Data = result.data as string;
+
+             // Infer mime type from extension
+             const mimeType = currentSong.localPath!.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
+
+             // Fast native base64 conversion
+             const res = await fetch(`data:${mimeType};base64,${base64Data}`);
+             const blob = await res.blob();
+
+             if (isCancelled) return;
+
+             const url = URL.createObjectURL(blob);
+             activeObjectUrl = url;
+             setOfflineUrl(url);
+           } catch (error) {
+             Logger.error('Failed to load offline audio for web', error);
+             if (!isCancelled) setOfflineUrl('');
+           }
+         };
+         loadWebOfflineAudio();
        }
-       return; // skip fetching stream for offline tracks
+
+       return () => {
+         isCancelled = true;
+         if (activeObjectUrl) {
+           URL.revokeObjectURL(activeObjectUrl);
+         }
+       }; // skip fetching stream for offline tracks
     } else {
        setOfflineUrl('');
     }
