@@ -6,9 +6,9 @@ export const Toggle = ({ enabled, onChange, label, description }: { enabled: boo
     const descId = `${id}-desc`;
 
     return (
-        <div className="flex items-center justify-between py-4 border-b border-white/5 light:border-black/5 last:border-0">
+        <div className="flex items-center justify-between py-3">
             <div className="flex flex-col pr-4">
-                <span id={labelId} className="text-[15px] font-semibold tracking-wide text-white light:text-black">{label}</span>
+                <span id={labelId} className="text-[15px] font-medium text-white light:text-black">{label}</span>
                 {description && <span id={descId} className="text-[13px] text-[#888] light:text-gray-500 mt-0.5">{description}</span>}
             </div>
             <button
@@ -17,10 +17,10 @@ export const Toggle = ({ enabled, onChange, label, description }: { enabled: boo
                 aria-labelledby={labelId}
                 aria-describedby={description ? descId : undefined}
                 onClick={() => onChange(!enabled)}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-white/5 transition-all duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff]/50 shadow-inner ${enabled ? 'bg-gradient-to-r from-[#00d2ff] to-[#00a0ff] light:from-blue-400 light:to-blue-600 shadow-[0_0_10px_rgba(0,210,255,0.4)]' : 'bg-white/10 light:bg-black/10 hover:bg-white/15'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212] ${enabled ? 'bg-[#00d2ff] light:bg-blue-500' : 'bg-white/20 light:bg-black/10'}`}
             >
                 <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${enabled ? 'translate-x-[22px]' : 'translate-x-1'}`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
                 />
             </button>
         </div>
@@ -33,15 +33,15 @@ export const Select = ({ value, onChange, options, label, description }: { value
     const descId = `${id}-desc`;
 
     return (
-        <div className="flex flex-col py-4 border-b border-white/5 light:border-black/5 last:border-0">
+        <div className="flex flex-col py-3">
             <div className="flex items-center justify-between mb-2">
-                 <label htmlFor={selectId} className="text-[15px] font-semibold tracking-wide text-white light:text-black">{label}</label>
+                 <label htmlFor={selectId} className="text-[15px] font-medium text-white light:text-black">{label}</label>
                  <select
                     id={selectId}
                     aria-describedby={description ? descId : undefined}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="bg-white/5 light:bg-black/5 text-white light:text-black text-[14px] font-medium rounded-xl px-4 py-2 border border-white/10 light:border-black/10 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff]/50 focus:border-[#00d2ff] light:focus:border-blue-500 cursor-pointer shadow-sm appearance-none outline-none"
+                    className="bg-white/5 light:bg-black/5 text-white light:text-black text-[14px] rounded-lg px-3 py-1.5 border border-white/10 light:border-black/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212] focus:border-[#00d2ff] light:focus:border-blue-500 cursor-pointer"
                  >
                     {options.map(opt => <option key={opt.id} value={opt.id} className="bg-[#121212] light:bg-white">{opt.label}</option>)}
                  </select>
@@ -57,16 +57,16 @@ export const ActionButton = ({ onClick, label, description, buttonText, destruct
     const descId = `${id}-desc`;
 
     return (
-        <div className="flex items-center justify-between py-4 border-b border-white/5 light:border-black/5 last:border-0">
+        <div className="flex items-center justify-between py-3">
             <div className="flex flex-col pr-4">
-                <span id={labelId} className="text-[15px] font-semibold tracking-wide text-white light:text-black">{label}</span>
+                <span id={labelId} className="text-[15px] font-medium text-white light:text-black">{label}</span>
                 {description && <span id={descId} className="text-[13px] text-[#888] light:text-gray-500 mt-0.5">{description}</span>}
             </div>
             <button
                 aria-labelledby={labelId}
                 aria-describedby={description ? descId : undefined}
                 onClick={onClick}
-                className={`px-5 py-2 rounded-xl text-[14px] font-bold tracking-wide transition-all shadow-sm active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${destructive ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 focus-visible:ring-red-500/50' : 'bg-white/5 light:bg-black/5 text-white light:text-black border border-white/10 light:border-black/10 hover:bg-white/10 light:hover:bg-black/10 hover:border-white/20 light:hover:border-black/20 focus-visible:ring-[#00d2ff]/50'}`}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212] ${destructive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 light:bg-black/10 text-white light:text-black hover:bg-white/20 light:hover:bg-black/20'}`}
             >
                 {buttonText}
             </button>

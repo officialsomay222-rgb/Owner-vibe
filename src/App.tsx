@@ -424,17 +424,31 @@ const SearchTab = () => {
 
 const LibraryTab = () => {
     const [activeSection, setActiveSection] = useState('Playlists');
-    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites' | 'downloads'>('main');
+    const [libraryView, setLibraryView] = useState<'main' | 'history' | 'favorites' | 'downloads' | 'custom_playlist'>('main');
 
-    // Using mock data for demonstration
-    const { playSong, playHistory, favorites } = useMusic();
+    // Custom Playlists logic
+    const { playSong, playHistory, favorites, customPlaylists } = useMusic();
+    const [, setCustomPlaylists] = useLocalStorage<any[]>('custom_playlists', []);
+
+    const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
+    const [newPlaylistName, setNewPlaylistName] = useState('');
+
     const [offlineVault] = useLocalStorage<any[]>('offline_vault', []);
-    const myPlaylists = [
-        { id: 1, title: 'Gym Motivation', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1543794327-59a91fb815d1?auto=format&fit=crop&q=80&w=200', views: '398 MILLION VIEWS' },
-        { id: 2, title: 'Late Night Vibes', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?auto=format&fit=crop&q=80&w=200' },
-        { id: 3, title: 'Chill Lo-Fi', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=200' },
-        { id: 4, title: 'Workout Mix', subtitle: 'Playlist • You', img: 'https://images.unsplash.com/photo-1493225457124-a1a2b534dda4?auto=format&fit=crop&q=80&w=200' },
-    ];
+
+    const handleCreatePlaylist = () => {
+        if (!newPlaylistName.trim()) return;
+        const newPlaylist = {
+            id: Date.now().toString(),
+            title: newPlaylistName.trim(),
+            subtitle: 'Playlist • You',
+            tracks: [],
+            img: 'https://images.unsplash.com/photo-1614624532983-4ce03382d63d?auto=format&fit=crop&q=80&w=200' // Default fallback image
+        };
+        setCustomPlaylists((prev: any[]) => [newPlaylist, ...prev]);
+        setNewPlaylistName('');
+        setIsCreatingPlaylist(false);
+    };
 
     if (libraryView === 'history') {
         return (
@@ -562,16 +576,123 @@ const LibraryTab = () => {
         );
     }
 
+    if (libraryView === 'custom_playlist') {
+        const playlist = customPlaylists.find(p => p.id === selectedPlaylistId);
+
+        if (!playlist) return null;
+
+        return (
+            <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in slide-in-from-right duration-300">
+                <button onClick={() => {
+                    setLibraryView('main');
+                    setSelectedPlaylistId(null);
+                }} className="flex items-center space-x-2 text-[#aaa] hover:text-white light:text-gray-600 light:hover:text-black mb-6 w-max transition-colors">
+                    <ArrowUpLeft className="w-5 h-5 -rotate-90" />
+                    <span className="font-medium">Back</span>
+                </button>
+                <div className="flex flex-col items-center text-center mb-8">
+                    <div className="w-40 h-40 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)] mb-4 bg-white/5 flex items-center justify-center">
+                        {playlist.tracks && playlist.tracks.length > 0 ? (
+                             <img src={playlist.tracks[0].thumbnailUrl || playlist.img} alt={playlist.title} className="w-full h-full object-cover" />
+                        ) : (
+                             <ListVideo className="w-16 h-16 text-white/20" />
+                        )}
+                    </div>
+                    <h2 className="text-[22px] font-extrabold text-white light:text-black leading-tight mb-1">{playlist.title}</h2>
+                    <span className="text-[15px] font-medium text-[#888] light:text-gray-500">{playlist.tracks ? playlist.tracks.length : 0} tracks</span>
+                </div>
+
+                <div className="flex flex-col space-y-3">
+                    {!playlist.tracks || playlist.tracks.length === 0 ? (
+                        <div className="text-center text-[#888] py-10">This playlist is empty. Add songs to it!</div>
+                    ) : (
+                        playlist.tracks.map((track: any, i: number) => (
+                            <div key={i} onClick={() => playSong(track, playlist.tracks)} className="flex items-center justify-between p-2 rounded-[16px] hover:bg-white/[0.05] light:hover:bg-black/[0.05] group cursor-pointer transition-all duration-300">
+                                <div className="flex items-center space-x-4">
+                                    <span className="text-[#666] light:text-gray-400 font-medium w-4 text-right text-[13px]">{i + 1}</span>
+                                    <div className="relative w-12 h-12 rounded-md overflow-hidden shrink-0">
+                                        <img src={track.thumbnailUrl} alt={track.title} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col max-w-[180px]">
+                                        <span className="text-white/95 light:text-gray-900 text-[15px] font-bold tracking-wide leading-tight line-clamp-1">{track.title}</span>
+                                        <span className="text-[#888] light:text-gray-500 text-[13px] font-medium line-clamp-1 mt-0.5">{track.artist}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
     <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
         <div className="flex items-center justify-between mb-8 pl-1">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Library</h2>
-            <button className="p-2.5 bg-white/[0.05] light:bg-black/[0.03] border border-white/[0.06] light:border-black/5 rounded-full text-white light:text-gray-900 hover:bg-white/[0.1] light:hover:bg-black/[0.06] active:scale-95 transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.3)] light:shadow-sm mt-1">
-                <Plus className="w-[22px] h-[22px]" />
+            <button
+                onClick={() => setIsCreatingPlaylist(true)}
+                className="flex items-center justify-center w-10 h-10 bg-[#00d2ff]/10 light:bg-blue-500/10 border border-[#00d2ff]/20 light:border-blue-500/20 rounded-full text-[#00d2ff] light:text-blue-600 hover:bg-[#00d2ff]/20 light:hover:bg-blue-500/20 active:scale-95 transition-all duration-300 shadow-sm"
+            >
+                <Plus className="w-6 h-6" />
             </button>
         </div>
+
+        {isCreatingPlaylist && (
+            <div className="mb-8 bg-white/5 light:bg-black/5 p-4 rounded-2xl border border-white/10 light:border-black/10 flex flex-col space-y-3 animate-in fade-in zoom-in duration-300">
+                <span className="text-white font-bold text-[15px]">Create Playlist</span>
+                <input
+                    type="text"
+                    placeholder="Playlist name..."
+                    autoFocus
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    className="w-full bg-black/40 light:bg-white text-white light:text-black rounded-lg px-4 py-2.5 border border-white/10 light:border-black/10 focus:outline-none focus:border-[#00d2ff] light:focus:border-blue-500"
+                />
+                <div className="flex justify-end space-x-3 mt-2">
+                    <button onClick={() => setIsCreatingPlaylist(false)} className="px-4 py-2 rounded-lg text-[#aaa] hover:text-white font-medium text-[14px]">Cancel</button>
+                    <button onClick={handleCreatePlaylist} className="px-4 py-2 rounded-lg bg-[#00d2ff] text-black font-bold text-[14px] hover:opacity-90">Create</button>
+                </div>
+            </div>
+        )}
+
+        {/* Essential 3 actions at the top */}
+        <div className="flex flex-col space-y-3 mb-8">
+            <div onClick={() => setLibraryView('history')} className="flex items-center space-x-4 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] light:bg-white light:hover:bg-black/[0.02] border border-white/5 light:border-black/5 shadow-sm cursor-pointer transition-all active:scale-[0.98] group">
+                <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 group-hover:bg-orange-500/20 transition-colors">
+                    <History className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-white light:text-black font-bold text-[16px]">Recently Played</span>
+                    <span className="text-[#888] light:text-gray-500 text-[13px]">{playHistory.length} items</span>
+                </div>
+            </div>
+
+            <div onClick={() => setLibraryView('favorites')} className="flex items-center space-x-4 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] light:bg-white light:hover:bg-black/[0.02] border border-white/5 light:border-black/5 shadow-sm cursor-pointer transition-all active:scale-[0.98] group">
+                <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:bg-rose-500/20 transition-colors">
+                    <Heart className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-white light:text-black font-bold text-[16px]">Favorites</span>
+                    <span className="text-[#888] light:text-gray-500 text-[13px]">{favorites.length} items</span>
+                </div>
+            </div>
+
+            <div onClick={() => setLibraryView('downloads')} className="flex items-center space-x-4 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] light:bg-white light:hover:bg-black/[0.02] border border-white/5 light:border-black/5 shadow-sm cursor-pointer transition-all active:scale-[0.98] group">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition-colors">
+                    <Download className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-white light:text-black font-bold text-[16px]">Downloads</span>
+                    <span className="text-[#888] light:text-gray-500 text-[13px]">{offlineVault.length} items</span>
+                </div>
+            </div>
+        </div>
         
-        <div className="flex space-x-8 border-b border-white/[0.04] light:border-black/[0.06] pb-0 mb-8 overflow-x-auto no-scrollbar pl-1">
+        <div className="flex space-x-8 border-b border-white/[0.04] light:border-black/[0.06] pb-0 mb-6 overflow-x-auto no-scrollbar pl-1">
             {['Playlists', 'Songs', 'Albums', 'Artists'].map(tab => (
                 <button
                     key={tab}
@@ -582,72 +703,33 @@ const LibraryTab = () => {
                 </button>
             ))}
         </div>
-        
-        <div className="flex items-center justify-between mb-8 pl-1">
-            <div className="flex items-center text-[#777] light:text-gray-500 transition-colors space-x-3 text-[13px] bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-1.5 rounded-[12px] border border-white/[0.04] light:border-black/[0.06]">
-               <span className="font-medium tracking-wide">{myPlaylists.length} items</span>
-               <div className="w-1 h-1 rounded-full bg-[#555] light:bg-gray-400"></div>
-               <span className="font-semibold tracking-wider text-[#aaa] light:text-gray-600">A-Z</span>
-            </div>
-            <div className="flex items-center space-x-5 text-[#666] light:text-gray-500 transition-colors">
-                <ArrowDown className="w-5 h-5 cursor-pointer hover:text-white light:hover:text-black transition-colors" />
-                <ListFilter className="w-5 h-5 cursor-pointer hover:text-white light:hover:text-black transition-colors" />
-                <Search className="w-5 h-5 cursor-pointer hover:text-white light:hover:text-black transition-colors" />
-            </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-5 mb-8">
-           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('history')}>
-               <div className="w-full aspect-square bg-gradient-to-br from-orange-500/10 to-orange-500/5 light:from-orange-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-orange-500/20 light:border-orange-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-orange-500/40 light:group-hover:border-orange-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <History className="w-[42px] h-[42px] text-orange-500 light:text-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
-               </div>
-               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Recently Played</span>
-           </div>
-           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('favorites')}>
-               <div className="w-full aspect-square bg-gradient-to-br from-rose-500/10 to-rose-500/5 light:from-rose-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-rose-500/20 light:border-rose-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-rose-500/40 light:group-hover:border-rose-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-t from-rose-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <Heart className="w-[42px] h-[42px] text-rose-500 light:text-rose-500 fill-rose-500/20 light:fill-rose-500/20 drop-shadow-[0_0_15px_rgba(244,63,94,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
-               </div>
-               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Favorites</span>
-           </div>
-           <div className="flex flex-col cursor-pointer group" onClick={() => setLibraryView('downloads')}>
-               <div className="w-full aspect-square bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 light:from-emerald-50 light:to-white rounded-[24px] flex items-center justify-center mb-3.5 border border-emerald-500/20 light:border-emerald-200/50 shadow-[0_8px_20px_rgba(0,0,0,0.2)] light:shadow-sm group-hover:border-emerald-500/40 light:group-hover:border-emerald-300 group-active:scale-[0.97] transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <Download className="w-[42px] h-[42px] text-emerald-500 light:text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] light:drop-shadow-none relative z-10 group-hover:scale-110 transition-transform duration-300" />
-               </div>
-               <span className="text-white/90 light:text-gray-800 transition-colors text-[14px] font-bold px-2 tracking-wide">Downloads</span>
-           </div>
-        </div>
-
 
         <div className="grid grid-cols-2 gap-5">
-            {activeSection === 'Playlists' && myPlaylists.map(playlist => (
+            {activeSection === 'Playlists' && customPlaylists.map(playlist => (
                 <div key={playlist.id} className="flex flex-col cursor-pointer group" onClick={() => {
-                    // Play a mock song if a playlist is clicked
-                    playSong({
-                        videoId: 'K4DyBUG242c',
-                        title: playlist.title,
-                        artist: 'Playlist Artist',
-                        thumbnailUrl: playlist.img
-                    });
+                    setSelectedPlaylistId(playlist.id);
+                    setLibraryView('custom_playlist');
                 }}>
-                    <div className="relative w-full aspect-square rounded-[24px] overflow-hidden mb-2 group-active:scale-[0.97] shadow-[0_8px_24px_rgba(0,0,0,0.5)] light:shadow-md border border-white/[0.04] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 transition-all duration-300">
-                        <img src={playlist.img} alt="Playlist" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50 opacity-80 group-hover:opacity-60 transition-opacity"></div>
-                        {playlist.views && (
-                            <div className="absolute top-0 left-0 bg-[#e50914] text-white px-3 py-1.5 rounded-br-2xl text-[11px] font-black leading-tight tracking-wider shadow-lg">
-                                {playlist.views.split(' ').map((word, i) => <React.Fragment key={i}>{word}<br/></React.Fragment>)}
-                            </div>
+                    <div className="relative w-full aspect-square rounded-[24px] overflow-hidden mb-2 group-active:scale-[0.97] shadow-[0_8px_24px_rgba(0,0,0,0.5)] light:shadow-md border border-white/[0.04] light:border-black/5 hover:border-white/[0.1] light:hover:border-black/10 transition-all duration-300 bg-white/5 flex items-center justify-center">
+                        {playlist.tracks && playlist.tracks.length > 0 ? (
+                            <img src={playlist.tracks[0].thumbnailUrl || playlist.img} alt="Playlist" className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" />
+                        ) : (
+                            <ListVideo className="w-12 h-12 text-white/20" />
                         )}
-                        <div className="absolute bottom-4 right-4 w-10 h-10 bg-[#00d2ff] rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,210,255,0.4)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                            <Play className="w-5 h-5 text-black fill-black ml-0.5" />
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50 opacity-80 group-hover:opacity-60 transition-opacity"></div>
                     </div>
                     <span className="text-white/90 light:text-gray-800 font-bold px-1 text-[15px] truncate">{playlist.title}</span>
-                    <span className="text-[#888] light:text-gray-500 px-1 text-[13px] truncate">{playlist.subtitle}</span>
+                    <span className="text-[#888] light:text-gray-500 px-1 text-[13px] truncate">{playlist.tracks ? playlist.tracks.length : 0} tracks</span>
                 </div>
             ))}
+
+            {activeSection === 'Playlists' && customPlaylists.length === 0 && (
+                 <div className="col-span-2 flex flex-col items-center justify-center py-10 text-center">
+                    <ListVideo className="w-16 h-16 text-white/20 light:text-black/20 mb-4" />
+                    <span className="text-white/80 light:text-gray-700 font-semibold text-lg">No playlists yet</span>
+                    <span className="text-[#888] light:text-gray-500 text-sm mt-2 max-w-[250px]">Create a new playlist to start saving your favorite collections!</span>
+                </div>
+            )}
 
             {activeSection !== 'Playlists' && (
                 <div className="col-span-2 flex flex-col items-center justify-center py-10 text-center">
@@ -692,29 +774,31 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
 
     return (
         <div className="flex flex-col pt-[84px] pb-32 px-5 animate-in fade-in duration-500">
-            <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 transition-colors mb-8 tracking-tight pl-1">Settings</h2>
+            <h2 className="text-[32px] font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 light:from-gray-900 light:to-gray-500 mb-8 tracking-tight pl-1 drop-shadow-sm">Settings</h2>
             
-            <div className="flex flex-col bg-white/[0.01] border border-white/[0.05] light:bg-white/80 light:border-black/[0.06] rounded-[24px] shadow-lg transition-colors overflow-hidden">
+            <div className="flex flex-col space-y-3">
                 {settingsItems.map((item, index) => {
                     const Icon = item.icon;
                     const isExpanded = expandedMenu === item.id;
                     return (
-                        <div key={item.id} className="flex flex-col">
+                        <div key={item.id} className={`flex flex-col bg-white/[0.02] light:bg-white/80 border ${isExpanded ? 'border-white/10 light:border-black/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)]' : 'border-white/[0.05] light:border-black/[0.06] shadow-sm'} rounded-[24px] transition-all duration-300 overflow-hidden`}>
                             <div 
                                 onClick={() => setExpandedMenu(isExpanded ? null : item.id)}
-                                className={`flex px-5 py-[20px] items-center justify-between cursor-pointer hover:bg-white/[0.04] active:bg-white/[0.06] light:hover:bg-black/[0.03] light:active:bg-black/[0.05] transition-all duration-300 group ${index !== settingsItems.length - 1 ? 'border-b border-white/[0.03] light:border-black/[0.04]' : ''}`}
+                                className="flex px-5 py-5 items-center justify-between cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] light:hover:bg-black/[0.02] light:active:bg-black/[0.04] transition-all duration-300 group"
                             >
-                                <div className="flex items-center space-x-5">
-                                    <div className={`p-2 rounded-xl transition-colors duration-300 ${isExpanded ? 'bg-white/[0.1] light:bg-black/[0.05]' : 'bg-transparent group-hover:bg-white/[0.05] light:group-hover:bg-black/[0.03]'}`}>
-                                        <Icon className={`w-5 h-5 transition-colors ${isExpanded ? 'text-white light:text-black' : 'text-[#888] group-hover:text-white light:text-gray-500 light:group-hover:text-gray-900'}`} />
+                                <div className="flex items-center space-x-4">
+                                    <div className={`p-2.5 rounded-[14px] transition-all duration-300 shadow-sm ${isExpanded ? 'bg-gradient-to-br from-[#00d2ff]/20 to-[#00a0ff]/20 light:from-blue-500/10 light:to-blue-600/10' : 'bg-white/5 light:bg-black/5 group-hover:bg-white/10 light:group-hover:bg-black/10'}`}>
+                                        <Icon className={`w-[22px] h-[22px] transition-colors ${isExpanded ? 'text-[#00d2ff] light:text-blue-600' : 'text-[#aaa] group-hover:text-white light:text-gray-500 light:group-hover:text-gray-900'}`} />
                                     </div>
-                                    <span className={`text-[16px] font-bold tracking-wide transition-colors ${isExpanded ? 'text-white light:text-black' : 'text-[#eee] light:text-gray-800'}`}>{item.label}</span>
+                                    <span className={`text-[17px] font-bold tracking-wide transition-colors ${isExpanded ? 'text-white light:text-black' : 'text-[#eee] light:text-gray-800'}`}>{item.label}</span>
                                 </div>
-                                <ChevronDown className={`w-5 h-5 text-[#555] group-hover:text-[#888] light:text-gray-400 light:group-hover:text-gray-600 transition-all duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                <div className={`p-1.5 rounded-full transition-colors ${isExpanded ? 'bg-white/5 light:bg-black/5' : ''}`}>
+                                    <ChevronDown className={`w-5 h-5 text-[#666] group-hover:text-[#aaa] light:text-gray-400 light:group-hover:text-gray-600 transition-all duration-300 ${isExpanded ? 'rotate-180 text-white light:text-black' : ''}`} />
+                                </div>
                             </div>
                             
-                            <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[1000px] opacity-100 border-b border-white/[0.03] light:border-black/[0.04] bg-white/[0.015] light:bg-black/[0.01]' : 'max-h-0 opacity-0'}`}>
-                                <div className="p-6 flex flex-col space-y-2">
+                            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[1200px] opacity-100 bg-black/20 light:bg-black/[0.02] border-t border-white/[0.04] light:border-black/[0.04]' : 'max-h-0 opacity-0'}`}>
+                                <div className="p-6 flex flex-col space-y-1">
                                     {item.id === 'personalisation' && (
                                         <>
                                             <span className="text-[14px] font-bold text-[#888] light:text-gray-500 uppercase tracking-widest pl-1 transition-colors mb-2">Theme Appearance</span>

@@ -75,7 +75,7 @@ export const MusicPlayer = () => {
     currentSong, isExpanded, setIsExpanded, isPlaying,
     togglePlayPause, playNext, playPrevious, duration, seekTo,
     isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
-    favorites, toggleFavorite, addToQueue, addToPlaylist
+    favorites, toggleFavorite, addToQueue, addToPlaylist, showPlaylistModal
   } = useMusic();
 
   const [isMuted, setIsMuted] = useState(false);
@@ -114,7 +114,7 @@ export const MusicPlayer = () => {
 
   const handleAddToPlaylist = () => {
     if (currentSong) {
-      addToPlaylist(currentSong);
+      showPlaylistModal(currentSong);
       setShowMenu(false);
     }
   };
