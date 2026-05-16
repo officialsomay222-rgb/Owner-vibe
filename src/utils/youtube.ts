@@ -126,12 +126,22 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
       targetItag = 251;
     }
 
+    const extractItag = (streamUrl: string) => {
+      try {
+        const urlObj = new URL(streamUrl);
+        const itag = urlObj.searchParams.get('itag');
+        return itag ? parseInt(itag, 10) : null;
+      } catch (e) {
+        return null;
+      }
+    };
+
     // Attempt to find requested quality
-    let stream = data.streamingUrls.find((s: any) => s.itag === targetItag);
+    let stream = data.streamingUrls.find((s: any) => extractItag(s.url || s.directUrl) === targetItag);
 
     // Fallback 1: 'normal' quality (itag 140)
     if (!stream) {
-      stream = data.streamingUrls.find((s: any) => s.itag === 140);
+      stream = data.streamingUrls.find((s: any) => extractItag(s.url || s.directUrl) === 140);
     }
 
     // Fallback 2: First item in the array
