@@ -68,6 +68,8 @@ export const MiniPlayer = () => {
               }}
               disabled={isLoadingStream}
               className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              title={isPlaying ? 'Pause' : 'Play'}
             >
               {isLoadingStream ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -83,6 +85,8 @@ export const MiniPlayer = () => {
                 playNext();
               }}
               className="p-2 text-white hover:text-white/80 transition-colors"
+              aria-label="Next track"
+              title="Next track"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>
