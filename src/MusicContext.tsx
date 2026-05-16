@@ -93,38 +93,53 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
+    let activeObjectUrl: string | null = null;
+    let isCancelled = false;
+
     if (currentSong && currentSong.localPath) {
-      if (Capacitor.isNativePlatform()) {
-        setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
-      } else {
-        // Read file dynamically from IndexedDB via Filesystem for web platforms
-        const readLocalFile = async () => {
-          try {
-            const result = await Filesystem.readFile({
-              path: currentSong.localPath!,
-              directory: Directory.Data
-            });
-            const base64Data = result.data as string;
-            // Decode base64 to Blob
-            const byteCharacters = atob(base64Data);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            // We use standard MIME types, fallback to audio/webm
-            const type = currentSong.localPath!.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
-            const blob = new Blob([byteArray], { type });
-            const objectUrl = URL.createObjectURL(blob);
-            setOfflineUrl(objectUrl);
-          } catch (err) {
-            Logger.error("Failed to read local file from Filesystem on web:", err);
-            setOfflineUrl('');
-          }
-        };
-        readLocalFile();
-      }
-      return; // skip fetching stream for offline tracks
+       if (Capacitor.isNativePlatform()) {
+         setOfflineUrl(Capacitor.convertFileSrc(currentSong.localPath));
+       } else {
+         // On the web, we must read the file from IndexedDB (via Capacitor Filesystem),
+         // convert the base64 to a Blob, and generate an Object URL.
+         const loadWebOfflineAudio = async () => {
+           try {
+             const result = await Filesystem.readFile({
+               path: currentSong.localPath!,
+               directory: Directory.Data
+             });
+
+             if (isCancelled) return;
+
+             // Extract base64 and create a blob
+             const base64Data = result.data as string;
+
+             // Infer mime type from extension
+             const mimeType = currentSong.localPath!.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
+
+             // Fast native base64 conversion
+             const res = await fetch(`data:${mimeType};base64,${base64Data}`);
+             const blob = await res.blob();
+
+             if (isCancelled) return;
+
+             const url = URL.createObjectURL(blob);
+             activeObjectUrl = url;
+             setOfflineUrl(url);
+           } catch (error) {
+             Logger.error('Failed to load offline audio for web', error);
+             if (!isCancelled) setOfflineUrl('');
+           }
+         };
+         loadWebOfflineAudio();
+       }
+
+       return () => {
+         isCancelled = true;
+         if (activeObjectUrl) {
+           URL.revokeObjectURL(activeObjectUrl);
+         }
+       }; // skip fetching stream for offline tracks
     } else {
       setOfflineUrl('');
     }
@@ -157,7 +172,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Extract high resolution image by rewriting standard YouTube thumbnail URLs
       // e.g. "w60-h60-l90-rj" -> "w500-h500-l90-rj"
       let highResArtUrl = currentSong.thumbnailUrl;
-      if (highResArtUrl) {
+      if (highResArtUrl && !highResArtUrl.startsWith('data:')) {
         highResArtUrl = highResArtUrl.replace(/=w\d+-h\d+/, '=w500-h500');
       }
 

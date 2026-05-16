@@ -48,7 +48,7 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
       </div>
       <div className="flex items-center justify-center relative translate-y-[1px] ml-1.5" id="verifiedOwnerTick">
         <div className="absolute inset-0 bg-yellow-500/30 blur-[6px] rounded-full scale-110 transform-gpu will-change-transform"></div>
-        <div className="relative z-10 w-[22px] h-[22px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] rounded-full overflow-hidden">
+        <div className="relative z-10 w-[22px] h-[22px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
             {/* Background shape with spinning animation */}
             <svg viewBox="0 0 24 24" className="w-full h-full absolute inset-0 animate-spin-slow" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -58,7 +58,7 @@ const Header = ({ isVisible }: { isVisible: boolean }) => (
                         <stop offset="100%" stopColor="#FF9800" />
                     </linearGradient>
                 </defs>
-                <path d="M11.236 1.439a1.705 1.705 0 0 1 1.528 0l1.79.93a1.71 1.71 0 0 0 1.258.125l1.921-.611a1.705 1.705 0 0 1 2.115 1.155l.56 1.942a1.71 1.71 0 0 0 1.011 1.144l1.868.76a1.705 1.705 0 0 1 .917 2.235l-.837 1.841a1.71 1.71 0 0 0 0 1.265l.837 1.842a1.705 1.705 0 0 1-.917 2.234l-1.87.76a1.71 1.71 0 0 0-1.01 1.144l-.56 1.943a1.705 1.705 0 0 1-2.115 1.154l-1.921-.61a1.708 1.708 0 0 0-1.258.124l-1.79.932a1.705 1.705 0 0 1-1.528 0l-1.79-.932a1.708 1.708 0 0 0-1.258-.124l-1.921.61a1.705 1.705 0 0 1-2.115-1.154l-.56-1.943a1.71 1.71 0 0 0-1.01-1.144l-1.87-.76a1.705 1.705 0 0 1-.918-2.234l.838-1.842a1.71 1.71 0 0 0 0-1.265l-.838-1.841a1.705 1.705 0 0 1 .918-2.235l1.869-.76a1.71 1.71 0 0 0 1.012-1.144l.56-1.942a1.705 1.705 0 0 1 2.115-1.155l1.921.611c.412.13.86-.01 1.258-.125l1.79-.93Z" fill="url(#yellowGrad)" />
+                <path d="M11.32 1.192a1.815 1.52 90 0 1 1.362 0l1.596 0.99a1.82 1.524 90 0 0 1.122 0.133l1.712-0.65a1.815 1.52 90 0 1 1.886 1.229l0.499 2.067a1.82 1.524 90 0 0 0.901 1.218l1.666 0.809a1.815 1.52 90 0 1 0.817 2.378l-0.746 1.96a1.82 1.524 90 0 0 0 1.346l0.746 1.961a1.815 1.52 90 0 1-0.817 2.377l-1.667 0.809a1.82 1.524 90 0 0-0.901 1.218l-0.499 2.068a1.815 1.52 90 0 1-1.886 1.228l-1.712-0.649a1.818 1.523 90 0 0-1.122 0.132l-1.596 0.992a1.815 1.52 90 0 1-1.362 0l-1.596-0.992a1.818 1.523 90 0 0-1.121-0.132l-1.713 0.649a1.815 1.52 90 0 1-1.885-1.228l-0.499-2.068a1.82 1.524 90 0 0-0.901-1.218l-1.667-0.809a1.815 1.52 90 0 1-0.818-2.377l0.747-1.961a1.82 1.524 90 0 0 0-1.346l-0.747-1.96a1.815 1.52 90 0 1 0.818-2.378l1.666-0.809a1.82 1.524 90 0 0 0.902-1.218l0.5-2.067a1.815 1.52 90 0 1 1.885-1.229l1.713 0.65c0.367 0.138 0.767-0.011 1.121-0.133l1.596-0.99Z" fill="url(#yellowGrad)" />
             </svg>
             {/* The Tick Mark */}
             <svg viewBox="0 0 24 24" className="w-full h-full absolute inset-0" fill="none" xmlns="http://www.w3.org/2000/svg">
