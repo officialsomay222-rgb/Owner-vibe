@@ -206,7 +206,7 @@ export const MusicPlayer = () => {
             <img
                 src={highResThumb}
                 alt="blur-bg"
-                className="w-full h-full object-cover blur-2xl opacity-50 scale-125"
+                className="w-full h-full object-cover blur-2xl opacity-50 scale-125 transform-gpu will-change-transform"
                 style={{ willChange: 'transform', transform: 'translateZ(0)' }}
             />
           </div>
@@ -339,7 +339,7 @@ export const MusicPlayer = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-end justify-center"
+            className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-end justify-center transform-gpu will-change-transform"
             onClick={() => setShowMenu(false)}
         >
             <motion.div
