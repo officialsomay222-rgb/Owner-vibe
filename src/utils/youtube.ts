@@ -91,7 +91,18 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
  * Uses the requested audio quality preference from local storage.
  */
 export async function getYouTubeAudioStream(videoId: string): Promise<string | null> {
-  const cached = streamUrlCache.get(videoId);
+  let audioQuality = 'normal';
+  try {
+    const stored = window.localStorage.getItem('owners_vibe_audio_quality');
+    if (stored) {
+      audioQuality = JSON.parse(stored);
+    }
+  } catch (e) {
+    Logger.warn('Failed to parse audio quality from localStorage', e);
+  }
+
+  const cacheKey = `${videoId}_${audioQuality}`;
+  const cached = streamUrlCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.url;
   }
@@ -107,16 +118,6 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
 
     if (!data.success || !data.streamingUrls || data.streamingUrls.length === 0) {
       return null;
-    }
-
-    let audioQuality = 'normal';
-    try {
-      const stored = window.localStorage.getItem('owners_vibe_audio_quality');
-      if (stored) {
-        audioQuality = JSON.parse(stored);
-      }
-    } catch (e) {
-      Logger.warn('Failed to parse audio quality from localStorage', e);
     }
 
     let targetItag = 140; // Default to normal
@@ -152,7 +153,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     const finalUrl = stream.url || stream.directUrl || null;
 
     if (finalUrl) {
-      streamUrlCache.set(videoId, { url: finalUrl, timestamp: Date.now() });
+      streamUrlCache.set(cacheKey, { url: finalUrl, timestamp: Date.now() });
     }
 
     return finalUrl;

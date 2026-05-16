@@ -141,7 +141,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          }
        }; // skip fetching stream for offline tracks
     } else {
-       setOfflineUrl('');
+      setOfflineUrl('');
     }
 
     if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
