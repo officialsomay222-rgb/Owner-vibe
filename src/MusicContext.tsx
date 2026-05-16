@@ -131,7 +131,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Extract high resolution image by rewriting standard YouTube thumbnail URLs
       // e.g. "w60-h60-l90-rj" -> "w500-h500-l90-rj"
       let highResArtUrl = currentSong.thumbnailUrl;
-      if (highResArtUrl) {
+      if (highResArtUrl && !highResArtUrl.startsWith('data:')) {
         highResArtUrl = highResArtUrl.replace(/=w\d+-h\d+/, '=w500-h500');
       }
 
