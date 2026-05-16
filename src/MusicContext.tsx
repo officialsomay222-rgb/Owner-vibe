@@ -127,47 +127,48 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          loadWebOfflineAudio();
        }
 
-       return () => {
-         isCancelled = true;
-         if (activeObjectUrl) {
-           URL.revokeObjectURL(activeObjectUrl);
-         }
-       }; // skip fetching stream for offline tracks
     } else {
       setOfflineUrl('');
-    }
 
-    if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
-      setIsLoadingStream(true);
-      const fetchStream = async () => {
-        try {
-          const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
+      if (currentSong && !currentSong.streamUrl && currentSong.videoId) {
+        setIsLoadingStream(true);
+        const fetchStream = async () => {
+          try {
+            const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
 
-          if (isCancelled) return;
+            if (isCancelled) return;
 
-          if (streamUrl) {
-            setCurrentSong((prev) => {
-              if (prev && prev.videoId === currentSong.videoId) {
-                return { ...prev, streamUrl };
-              }
-              return prev;
-            });
-          } else {
-              Logger.error("Failed to find suitable stream URL for", currentSong.videoId);
-              playNext();
+            if (streamUrl) {
+              setCurrentSong((prev) => {
+                if (prev && prev.videoId === currentSong.videoId) {
+                  return { ...prev, streamUrl };
+                }
+                return prev;
+              });
+            } else {
+                Logger.error("Failed to find suitable stream URL for", currentSong.videoId);
+                playNext();
+            }
+          } catch (err) {
+            if (isCancelled) return;
+            Logger.error("Failed to fetch youtube stream:", err);
+            playNext();
+          } finally {
+              if (!isCancelled) setIsLoadingStream(false);
           }
-        } catch (err) {
-          if (isCancelled) return;
-          Logger.error("Failed to fetch youtube stream:", err);
-          playNext();
-        } finally {
-            if (!isCancelled) setIsLoadingStream(false);
-        }
-      };
-      fetchStream();
-    } else if (currentSong?.streamUrl) {
-        setIsLoadingStream(false);
+        };
+        fetchStream();
+      } else if (currentSong?.streamUrl) {
+          setIsLoadingStream(false);
+      }
     }
+
+    return () => {
+      isCancelled = true;
+      if (activeObjectUrl) {
+        URL.revokeObjectURL(activeObjectUrl);
+      }
+    };
   }, [currentSong]);
 
   // Sync Media Session Metadata
@@ -293,6 +294,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
     }
@@ -338,6 +340,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (currentIndex < queue.length - 1) {
           if (audioRef.current) {
             audioRef.current.pause();
+            audioRef.current.currentTime = 0;
             audioRef.current.removeAttribute('src');
             audioRef.current.load();
           }
@@ -348,6 +351,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Loop back to the first song
           if (audioRef.current) {
             audioRef.current.pause();
+            audioRef.current.currentTime = 0;
             audioRef.current.removeAttribute('src');
             audioRef.current.load();
           }
@@ -367,6 +371,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentIndex > 0) {
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
         audioRef.current.removeAttribute('src');
         audioRef.current.load();
       }
@@ -377,6 +382,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Go to the last song
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
         audioRef.current.removeAttribute('src');
         audioRef.current.load();
       }
