@@ -38,28 +38,28 @@ export async function downloadTrackToVault(
     }
 
     // 2. Quality Extraction Logic
+    const extractItag = (streamUrl: string) => {
+      try {
+        const urlObj = new URL(streamUrl);
+        const itag = urlObj.searchParams.get('itag');
+        return itag ? parseInt(itag, 10) : null;
+      } catch (e) {
+        return null;
+      }
+    };
+
     let targetItag = 140; // Default to Normal
     if (selectedQuality === 'Low') targetItag = 249;
     if (selectedQuality === 'High') targetItag = 251;
 
-    let selectedStream = data.streamingUrls.find((stream: any) => stream.itag === targetItag);
+    let selectedStream = data.streamingUrls.find((stream: any) => extractItag(stream.url || stream.directUrl) === targetItag);
 
-    // Fallback 1: Try 140
-    if (!selectedStream) {
-      selectedStream = data.streamingUrls.find((stream: any) => stream.itag === 140);
+    if (!selectedStream || (!selectedStream.directUrl && !selectedStream.url)) {
+      throw new Error(`Could not resolve a streaming URL for the requested quality (${selectedQuality}).`);
     }
 
-    // Fallback 2: First available
-    if (!selectedStream) {
-      selectedStream = data.streamingUrls[0];
-    }
-
-    if (!selectedStream || !selectedStream.directUrl) {
-      throw new Error('Could not resolve a direct streaming URL.');
-    }
-
-    const downloadUrl = selectedStream.directUrl;
-    const actualItag = selectedStream.itag;
+    const downloadUrl = selectedStream.directUrl || selectedStream.url;
+    const actualItag = extractItag(downloadUrl);
 
     // 3. Determine file extension
     let ext = 'webm';
