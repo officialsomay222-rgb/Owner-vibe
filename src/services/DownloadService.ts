@@ -1,4 +1,3 @@
-import { CapacitorHttp } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Logger } from '../utils/logger';
 
@@ -97,24 +96,9 @@ export async function downloadTrackToVault(
     }
 
     // 4. Native Capacitor Download
-    // Based on user specification, use CapacitorHttp.downloadFile.
-    // Types may not explicitly show it in current V8 typings, so we cast to any.
-    // However, it's also common that Capacitor's HTTP plugin is bridged this way.
-    // Note: Since Capacitor 5+, Filesystem.downloadFile actually maps to the HTTP plugin under the hood
-    // or is the correct method, but we strictly follow the instruction.
     let nativeFilePath = '';
 
     try {
-      const downloadResponse = await (CapacitorHttp as any).downloadFile({
-        url: downloadUrl,
-        filePath: fileName,
-        fileDirectory: Directory.Data,
-        progress: true,
-      });
-      nativeFilePath = downloadResponse.path || fileName;
-    } catch (err) {
-      Logger.warn('CapacitorHttp.downloadFile failed or missing, falling back to Filesystem.downloadFile', err);
-      // Fallback if the user's plugin version actually uses Filesystem for this
       const downloadResponse = await Filesystem.downloadFile({
         url: downloadUrl,
         path: fileName,
@@ -122,6 +106,9 @@ export async function downloadTrackToVault(
         progress: true,
       });
       nativeFilePath = downloadResponse.path || fileName;
+    } catch (err) {
+      Logger.error('Filesystem.downloadFile failed', err);
+      throw err;
     }
 
     // Clean up listener
