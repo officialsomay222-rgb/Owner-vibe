@@ -121,9 +121,43 @@ export async function downloadTrackToVault(
       onProgress(100);
     }
 
+    // Convert cover art to Base64 so it can be viewed offline
+    let finalCoverArt = metadata.coverArt;
+    if (finalCoverArt && !finalCoverArt.startsWith('data:')) {
+      try {
+        // Rewrite to high res
+        let highResArtUrl = finalCoverArt.replace(/=w\d+-h\d+/, '=w500-h500');
+        // Fetch as blob
+        const imgRes = await fetch(highResArtUrl);
+        if (imgRes.ok) {
+          const blob = await imgRes.blob();
+          const base64data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                resolve(reader.result);
+              } else {
+                reject(new Error('FileReader result is not a string'));
+              }
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          finalCoverArt = base64data;
+        }
+      } catch (e) {
+        Logger.error('Failed to convert cover art to base64 for offline vault:', e);
+      }
+    }
+
+    const finalMetadata = {
+      ...metadata,
+      coverArt: finalCoverArt
+    };
+
     const offlineTrack: OfflineTrack = {
       songId,
-      metadata,
+      metadata: finalMetadata,
       filePath: nativeFilePath,
       downloadedAt: Date.now()
     };
