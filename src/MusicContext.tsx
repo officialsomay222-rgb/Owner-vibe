@@ -81,16 +81,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        safePlay();
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
   const [offlineUrl, setOfflineUrl] = useState<string>('');
 
   // Auto-fetch stream URL for current song if missing
@@ -331,7 +321,13 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        safePlay();
+      }
+    }
   };
 
   const playNext = () => {
