@@ -131,8 +131,21 @@ export const MusicPlayer = () => {
         coverArt: currentSong.thumbnailUrl || ''
       };
 
+      // Retrieve preferred download quality from localStorage
+      const savedQuality = window.localStorage.getItem('owners_vibe_audio_quality');
+      let audioQualitySetting: 'Low' | 'Normal' | 'High' = 'Normal';
+      if (savedQuality) {
+        try {
+          const parsed = JSON.parse(savedQuality);
+          if (parsed === 'low') audioQualitySetting = 'Low';
+          if (parsed === 'high') audioQualitySetting = 'High';
+        } catch (e) {
+          // Fallback to normal if not valid JSON
+        }
+      }
+
       // Force refresh the localStorage state in this component to re-render the checkmark
-      const track = await downloadTrackToVault(currentSong.videoId, metadata, 'Normal');
+      const track = await downloadTrackToVault(currentSong.videoId, metadata, audioQualitySetting);
 
       // Update local storage hook state manually to trigger UI update
       setOfflineVault(prev => {
@@ -142,9 +155,10 @@ export const MusicPlayer = () => {
 
       setIsDownloading(false);
       // Let it stay open so user sees it change to checked, or close it if preferred.
-    } catch (err) {
+    } catch (err: any) {
       Logger.error("Failed to download track:", err);
       setIsDownloading(false);
+      alert(err.message || "Failed to download track. The requested quality might not be available.");
     }
   };
 
