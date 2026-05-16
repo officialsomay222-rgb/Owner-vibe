@@ -34,8 +34,17 @@ export const MiniPlayer = () => {
         className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] inset-x-2 z-40 max-w-md mx-auto"
       >
         <div
+          role="button"
+          tabIndex={0}
+          aria-label={`Now playing: ${currentSong.title} by ${currentSong.artist}. Click to expand player.`}
           onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsExpanded(true);
+            }
+          }}
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           {/* Progress Bar Line */}
           <MiniProgressBar duration={duration} audioRef={audioRef} />
@@ -67,7 +76,9 @@ export const MiniPlayer = () => {
                 }
               }}
               disabled={isLoadingStream}
-              className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
+              aria-label={isLoadingStream ? 'Loading audio stream' : isPlaying ? 'Pause' : 'Play'}
+              title={isLoadingStream ? 'Loading...' : isPlaying ? 'Pause' : 'Play'}
+              className={`p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff]/50 rounded-full ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
               {isLoadingStream ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -82,7 +93,9 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
-              className="p-2 text-white hover:text-white/80 transition-colors"
+              aria-label="Skip to next track"
+              title="Skip to next track"
+              className="p-2 text-white hover:text-white/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00d2ff]/50 rounded-full"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>
