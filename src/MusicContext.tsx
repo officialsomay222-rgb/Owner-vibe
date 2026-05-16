@@ -28,6 +28,8 @@ interface MusicContextType {
   playHistory: Song[];
   favorites: Song[];
   toggleFavorite: (song: Song) => void;
+  addToQueue: (song: Song) => void;
+  addToPlaylist: (song: Song) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -336,6 +338,21 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
+  const addToQueue = (song: Song) => {
+    setOriginalQueue(prev => [...prev, song]);
+    setQueue(prev => [...prev, song]);
+    // If not currently playing anything, start playing this song
+    if (!currentSong) {
+      playSong(song);
+    }
+  };
+
+  const addToPlaylist = (song: Song) => {
+    // We would typically show a playlist selector modal here,
+    // but for now, we'll log it as a placeholder until the user requests full playlist management
+    Logger.log("Added to playlist:", song.title);
+  };
+
   const toggleRepeat = () => {
       setRepeatMode(prev => {
           if (prev === 'none') return 'all';
@@ -375,7 +392,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioRef,
       playHistory,
       favorites,
-      toggleFavorite
+      toggleFavorite,
+      addToQueue,
+      addToPlaylist
     }}>
       {children}
       <audio
