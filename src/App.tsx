@@ -533,7 +533,7 @@ const LibraryTab = () => {
             artist: t.metadata.artist,
             thumbnailUrl: t.metadata.coverArt,
             isOffline: true,
-            filePath: t.filePath
+            localPath: t.filePath
         }));
 
         return (
