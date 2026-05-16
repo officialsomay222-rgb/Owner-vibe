@@ -745,6 +745,35 @@ const LibraryTab = () => {
 };
 
 
+const APP_FONTS = [
+  'System Default',
+  'Roboto',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
+  'Oswald',
+  'Source Sans Pro',
+  'Slabo 27px',
+  'Raleway',
+  'PT Sans',
+  'Merriweather',
+  'Noto Sans',
+  'Nunito',
+  'Concert One',
+  'Prompt',
+  'Work Sans',
+  'Fira Sans',
+  'Quicksand',
+  'Barlow',
+  'Mulish',
+  'Titillium Web',
+  'Heebo',
+  'Hind',
+  'Josefin Sans',
+  'Teko',
+  'Exo 2'
+];
+
 const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', setTheme: (t: 'system' | 'dark' | 'light') => void }) => {
     const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
@@ -753,6 +782,7 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
     const [accentColor, setAccentColor] = useLocalStorage('settings_accentColor', 'blue');
     const [layoutStyle, setLayoutStyle] = useLocalStorage('settings_layoutStyle', 'list');
 
+    const [appFont, setAppFont] = useLocalStorage<string>('settings_appFont', 'System Default');
     const [contentLang, setContentLang] = useLocalStorage('settings_contentLang', 'en');
     const [explicitContent, setExplicitContent] = useLocalStorage('settings_explicitContent', false);
 
@@ -823,6 +853,8 @@ const SettingsTab = ({ theme, setTheme }: { theme: 'system' | 'dark' | 'light', 
                                                     </button>
                                                 ))}
                                             </div>
+
+                                            <Select value={appFont} onChange={setAppFont} label="App Font" options={APP_FONTS.map(f => ({id: f, label: f}))} description="Select the font used throughout the app" />
                                             <Toggle enabled={dynamicTheme} onChange={setDynamicTheme} label="Dynamic Theme" description="Extract accent colors from album art" />
                                             <Select value={accentColor} onChange={setAccentColor} label="Accent Color" options={[
                                                 {id: 'blue', label: 'Ocean Blue'},
@@ -921,6 +953,27 @@ export default function App() {
   const [showHeader, setShowHeader] = useState(true);
   const [theme, setTheme] = useState<'system' | 'dark' | 'light'>('system');
   const lastScrollY = useRef(0);
+
+  const [appFont] = useLocalStorage<string>('settings_appFont', 'System Default');
+  useEffect(() => {
+    if (appFont !== 'System Default') {
+      const linkId = 'app-font-link';
+      let link = document.getElementById(linkId) as HTMLLinkElement;
+      if (!link) {
+        link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      link.href = `https://fonts.googleapis.com/css2?family=${appFont.replace(/ /g, '+')}&display=swap`;
+      document.body.style.fontFamily = `"${appFont}", sans-serif`;
+    } else {
+      document.body.style.fontFamily = '';
+      const link = document.getElementById('app-font-link');
+      if (link) link.remove();
+    }
+  }, [appFont]);
+
 
   useEffect(() => {
     const root = document.documentElement;
