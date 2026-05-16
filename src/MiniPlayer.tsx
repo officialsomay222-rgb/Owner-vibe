@@ -31,7 +31,7 @@ export const MiniPlayer = () => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-        className="fixed bottom-[85px] inset-x-2 z-40 max-w-md mx-auto"
+        className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] inset-x-2 z-40 max-w-md mx-auto"
       >
         <div
           onClick={() => setIsExpanded(true)}
