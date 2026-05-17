@@ -135,6 +135,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsLoadingStream(true);
         const fetchStream = async () => {
           try {
+            setFallbackUrls([]);
             const streamUrls = await musicService.getStreamUrl(currentSong.videoId);
 
             if (isCancelled) return;
