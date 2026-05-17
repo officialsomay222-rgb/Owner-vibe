@@ -2,7 +2,7 @@ import type { SearchResultItem } from '../types';
 import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
-export const USE_VEROME_API = true;
+export const USE_VEROME_API = false;
 
 // Cache to prevent redundant stream API requests for previously played songs
 // Caches expire after 1 hour (3600000 ms) since signed URLs often expire
