@@ -82,6 +82,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const [offlineUrl, setOfflineUrl] = useState<string>('');
+  const [fallbackUrls, setFallbackUrls] = useState<string[]>([]);
 
   // Auto-fetch stream URL for current song if missing
   useEffect(() => {
@@ -134,14 +135,15 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsLoadingStream(true);
         const fetchStream = async () => {
           try {
-            const streamUrl = await musicService.getStreamUrl(currentSong.videoId);
+            const streamUrls = await musicService.getStreamUrl(currentSong.videoId);
 
             if (isCancelled) return;
 
-            if (streamUrl) {
+            if (streamUrls && streamUrls.length > 0) {
+              setFallbackUrls(streamUrls.slice(1));
               setCurrentSong((prev) => {
                 if (prev && prev.videoId === currentSong.videoId) {
-                  return { ...prev, streamUrl };
+                  return { ...prev, streamUrl: streamUrls[0] };
                 }
                 return prev;
               });
@@ -561,6 +563,15 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         onError={(e) => {
           Logger.error('Audio Tag Fatal Error:', e.currentTarget.error);
           Logger.log('Failed URL:', currentSong?.streamUrl);
+          if (fallbackUrls.length > 0) {
+            Logger.log('Trying fallback URL...');
+            const nextUrl = fallbackUrls[0];
+            setFallbackUrls(prev => prev.slice(1));
+            setCurrentSong(prev => prev ? { ...prev, streamUrl: nextUrl } : prev);
+          } else {
+            Logger.log('No fallback URLs left, skipping to next song.');
+            playNext();
+          }
         }}
       />
     </MusicContext.Provider>

@@ -5,7 +5,7 @@ const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
 
 // Cache to prevent redundant stream API requests for previously played songs
 // Caches expire after 1 hour (3600000 ms) since signed URLs often expire
-const streamUrlCache = new Map<string, { url: string, timestamp: number }>();
+const streamUrlCache = new Map<string, { urls: string[], timestamp: number }>();
 const CACHE_TTL = 3600000;
 
 /**
@@ -90,7 +90,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
  * Gets the raw stream URL for playback natively in Capacitor via Verome API.
  * Uses the requested audio quality preference from local storage.
  */
-export async function getYouTubeAudioStream(videoId: string): Promise<string | null> {
+export async function getYouTubeAudioStream(videoId: string): Promise<string[]> {
   let audioQuality = 'normal';
   try {
     const stored = window.localStorage.getItem('owners_vibe_audio_quality');
@@ -104,7 +104,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
   const cacheKey = `${videoId}_${audioQuality}`;
   const cached = streamUrlCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.url;
+    return cached.urls;
   }
 
   try {
@@ -117,7 +117,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
     const data = await response.json();
 
     if (!data.success || !data.streamingUrls || data.streamingUrls.length === 0) {
-      return null;
+      return [];
     }
 
     let targetItag = 140; // Default to normal
@@ -137,29 +137,38 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string | n
       }
     };
 
-    // Attempt to find requested quality
-    let stream = data.streamingUrls.find((s: any) => extractItag(s.url || s.directUrl) === targetItag);
+    const fallbackUrls: string[] = [];
 
-    // Fallback 1: 'normal' quality (itag 140)
-    if (!stream) {
-      stream = data.streamingUrls.find((s: any) => extractItag(s.url || s.directUrl) === 140);
+    // Prioritize streams matching the target itag
+    const targetStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === targetItag);
+    for (const s of targetStreams) {
+      const url = s.url || s.directUrl;
+      if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
     }
 
-    // Fallback 2: First item in the array
-    if (!stream) {
-      stream = data.streamingUrls[0];
+    // Add fallback itag 140 (normal) if target wasn't 140
+    if (targetItag !== 140) {
+      const normalStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === 140);
+      for (const s of normalStreams) {
+        const url = s.url || s.directUrl;
+        if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
+      }
     }
 
-    const finalUrl = stream.url || stream.directUrl || null;
-
-    if (finalUrl) {
-      streamUrlCache.set(cacheKey, { url: finalUrl, timestamp: Date.now() });
+    // Add all other remaining streams
+    for (const s of data.streamingUrls) {
+      const url = s.url || s.directUrl;
+      if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
     }
 
-    return finalUrl;
+    if (fallbackUrls.length > 0) {
+      streamUrlCache.set(cacheKey, { urls: fallbackUrls, timestamp: Date.now() });
+    }
+
+    return fallbackUrls;
 
   } catch (err) {
     Logger.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
-    return null;
+    return [];
   }
 }
