@@ -2,6 +2,7 @@ import type { SearchResultItem } from '../types';
 import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
+export const USE_VEROME_API = false;
 
 // Cache to prevent redundant stream API requests for previously played songs
 // Caches expire after 1 hour (3600000 ms) since signed URLs often expire
@@ -107,58 +108,105 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     return cached.urls;
   }
 
+  let targetItag = 140; // Default to normal
+  if (audioQuality === 'low') {
+    targetItag = 249;
+  } else if (audioQuality === 'high') {
+    targetItag = 251;
+  }
+
+  const extractItag = (streamUrl: string) => {
+    try {
+      const urlObj = new URL(streamUrl);
+      const itag = urlObj.searchParams.get('itag');
+      return itag ? parseInt(itag, 10) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   try {
-    const response = await fetch(`${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`);
-
-    if (!response.ok) {
-      throw new Error(`Stream fetch failed with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.success || !data.streamingUrls || data.streamingUrls.length === 0) {
-      return [];
-    }
-
-    let targetItag = 140; // Default to normal
-    if (audioQuality === 'low') {
-      targetItag = 249;
-    } else if (audioQuality === 'high') {
-      targetItag = 251;
-    }
-
-    const extractItag = (streamUrl: string) => {
-      try {
-        const urlObj = new URL(streamUrl);
-        const itag = urlObj.searchParams.get('itag');
-        return itag ? parseInt(itag, 10) : null;
-      } catch (e) {
-        return null;
-      }
-    };
-
     const fallbackUrls: string[] = [];
 
-    // Prioritize streams matching the target itag
-    const targetStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === targetItag);
-    for (const s of targetStreams) {
-      const url = s.url || s.directUrl;
-      if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
-    }
+    if (USE_VEROME_API) {
+      const response = await fetch(`${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`);
 
-    // Add fallback itag 140 (normal) if target wasn't 140
-    if (targetItag !== 140) {
-      const normalStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === 140);
-      for (const s of normalStreams) {
+      if (!response.ok) {
+        throw new Error(`Stream fetch failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.streamingUrls || data.streamingUrls.length === 0) {
+        return [];
+      }
+
+      // Prioritize streams matching the target itag
+      const targetStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === targetItag);
+      for (const s of targetStreams) {
         const url = s.url || s.directUrl;
         if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
       }
-    }
 
-    // Add all other remaining streams
-    for (const s of data.streamingUrls) {
-      const url = s.url || s.directUrl;
-      if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
+      // Add fallback itag 140 (normal) if target wasn't 140
+      if (targetItag !== 140) {
+        const normalStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === 140);
+        for (const s of normalStreams) {
+          const url = s.url || s.directUrl;
+          if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
+        }
+      }
+
+      // Add all other remaining streams
+      for (const s of data.streamingUrls) {
+        const url = s.url || s.directUrl;
+        if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
+      }
+    } else {
+      // Use the new Netlify Edge Function proxy fallback
+      const response = await fetch(`/api/v1/videos/${encodeURIComponent(videoId)}`);
+
+      if (!response.ok) {
+        throw new Error(`Stream fetch failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.adaptiveFormats || !Array.isArray(data.adaptiveFormats)) {
+        return [];
+      }
+
+      // We only care about audio formats
+      const audioFormats = data.adaptiveFormats.filter((f: any) => f.type && f.type.startsWith('audio'));
+
+      const extractFallbackItag = (format: any) => {
+        try {
+          const urlObj = new URL(format.url);
+          const itag = urlObj.searchParams.get('itag');
+          return itag ? parseInt(itag, 10) : null;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      // Prioritize streams matching target itag
+      const targetStreams = audioFormats.filter((f: any) => extractFallbackItag(f) === targetItag);
+      for (const f of targetStreams) {
+        if (f.url && !fallbackUrls.includes(f.url)) fallbackUrls.push(f.url);
+      }
+
+      // Fallback 140
+      if (targetItag !== 140) {
+        const normalStreams = audioFormats.filter((f: any) => extractFallbackItag(f) === 140);
+        for (const f of normalStreams) {
+          if (f.url && !fallbackUrls.includes(f.url)) fallbackUrls.push(f.url);
+        }
+      }
+
+      // All other audio formats
+      for (const f of audioFormats) {
+        if (f.url && !fallbackUrls.includes(f.url)) fallbackUrls.push(f.url);
+      }
     }
 
     if (fallbackUrls.length > 0) {
@@ -168,7 +216,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     return fallbackUrls;
 
   } catch (err) {
-    Logger.error(`Failed to get audio stream from Verome API for ${videoId}:`, err);
+    Logger.error(`Failed to get audio stream for ${videoId} using ${USE_VEROME_API ? 'Verome API' : 'Netlify Edge Function'}:`, err);
     return [];
   }
 }
