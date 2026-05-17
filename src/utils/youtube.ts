@@ -2,7 +2,7 @@ import type { SearchResultItem } from '../types';
 import { Logger } from './logger';
 
 const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
-export const USE_VEROME_API = false;
+export const USE_VEROME_API = true;
 
 // Cache to prevent redundant stream API requests for previously played songs
 // Caches expire after 1 hour (3600000 ms) since signed URLs often expire
@@ -129,7 +129,12 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     const fallbackUrls: string[] = [];
 
     if (USE_VEROME_API) {
-      const response = await fetch(`${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`);
+
+      const targetUrl = `${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`;
+      const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+      const fetchUrl = isNative ? targetUrl : `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const response = await fetch(fetchUrl);
+
 
       if (!response.ok) {
         throw new Error(`Stream fetch failed with status: ${response.status}`);
@@ -210,7 +215,22 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     }
 
     if (fallbackUrls.length > 0) {
-      streamUrlCache.set(cacheKey, { urls: fallbackUrls, timestamp: Date.now() });
+      // PROXY FIX: Rewrite googlevideo.com URLs to proxy via an Invidious instance
+      // This bypasses the 403 Forbidden errors.
+      const proxyDomain = 'https://yt.omada.cafe';
+      const rewrittenUrls = fallbackUrls.map(url => {
+        try {
+          const urlObj = new URL(url);
+          if (urlObj.hostname.includes('googlevideo.com')) {
+             return proxyDomain + urlObj.pathname + urlObj.search;
+          }
+          return url;
+        } catch (e) {
+          return url;
+        }
+      });
+      streamUrlCache.set(cacheKey, { urls: rewrittenUrls, timestamp: Date.now() });
+      return rewrittenUrls;
     }
 
     return fallbackUrls;
