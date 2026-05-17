@@ -150,12 +150,10 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               });
             } else {
                 Logger.error("Failed to find suitable stream URL for", currentSong.videoId);
-                playNext();
             }
           } catch (err) {
             if (isCancelled) return;
             Logger.error("Failed to fetch youtube stream:", err);
-            playNext();
           } finally {
               if (!isCancelled) setIsLoadingStream(false);
           }
@@ -570,8 +568,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setFallbackUrls(prev => prev.slice(1));
             setCurrentSong(prev => prev ? { ...prev, streamUrl: nextUrl } : prev);
           } else {
-            Logger.log('No fallback URLs left, skipping to next song.');
-            playNext();
+            Logger.log('No fallback URLs left.');
           }
         }}
       />
