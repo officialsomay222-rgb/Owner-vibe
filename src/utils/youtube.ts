@@ -60,7 +60,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
 
         // Sometimes ytify returns 'channel' instead of 'artist'
         const isArtist = item.type === 'artist' || item.type === 'channel';
-        let type = isArtist ? 'artist' : item.type === 'album' ? 'album' : item.type === 'playlist' ? 'playlist' : 'song';
+        let type: "video" | "song" | "album" | "artist" | "playlist" = isArtist ? 'artist' : item.type === 'album' ? 'album' : item.type === 'playlist' ? 'playlist' : 'song';
 
         let title = item.title;
         if (!title && item.name) {
