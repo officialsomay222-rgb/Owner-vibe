@@ -15,6 +15,69 @@ const CACHE_TTL = 3600000;
 export async function searchYouTubeMusic(query: string, filter: string = 'songs'): Promise<SearchResultItem[]> {
   try {
     const encodedQuery = encodeURIComponent(query);
+
+    if (!USE_VEROME_API) {
+      // Map 'songs' to 'song' for ytify API
+      let ytifyFilter = filter.toLowerCase();
+      if (ytifyFilter === 'songs') ytifyFilter = 'song';
+      if (ytifyFilter === 'albums') ytifyFilter = 'album';
+      if (ytifyFilter === 'artists') ytifyFilter = 'artist';
+      if (ytifyFilter === 'playlists') ytifyFilter = 'playlist';
+
+      let url = `https://api.ytify.workers.dev/search?q=${encodedQuery}`;
+      if (ytifyFilter && ytifyFilter !== 'all') {
+        url += `&f=${encodeURIComponent(ytifyFilter)}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Search failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        return [];
+      }
+
+      return data.map((item: any) => {
+        // Construct image URL from ytify img path
+        let thumbnailUrl = '';
+        if (item.img) {
+          if (item.img.startsWith('//')) {
+            // Protocol relative URL
+            thumbnailUrl = `https:${item.img}`;
+          } else if (item.img.startsWith('/')) {
+            // Channel avatars often come back as relative paths from yt3
+            thumbnailUrl = `https://yt3.googleusercontent.com${item.img}=s720-c-k-c0x00ffffff-no-rj`;
+          } else if (item.img.startsWith('http') || item.img.startsWith('data:')) {
+            thumbnailUrl = item.img;
+          } else {
+            thumbnailUrl = `https://i.ytimg.com/vi/${item.img}/hqdefault.jpg`;
+          }
+        } else if (item.id && (item.type === 'song' || item.type === 'video')) {
+          thumbnailUrl = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+        }
+
+        // Sometimes ytify returns 'channel' instead of 'artist'
+        const isArtist = item.type === 'artist' || item.type === 'channel';
+        let type = isArtist ? 'artist' : item.type === 'album' ? 'album' : item.type === 'playlist' ? 'playlist' : 'song';
+
+        let title = item.title;
+        if (!title && item.name) {
+             title = item.name;
+        }
+
+        return {
+          type: type,
+          id: item.id || item.browseId || '',
+          title: title || '',
+          artist: item.author || (isArtist ? 'Artist' : 'Unknown Artist'),
+          thumbnailUrl: thumbnailUrl,
+          duration: item.duration || '',
+        };
+      });
+    }
+
     let url = `${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}`;
 
     // Verome API uses empty filter or omits filter for 'All'
