@@ -68,7 +68,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
         }
 
         return {
-          type: type,
+          type: type as SearchResultItem['type'],
           id: item.id || item.browseId || '',
           title: title || '',
           artist: item.author || (isArtist ? 'Artist' : 'Unknown Artist'),
@@ -134,7 +134,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
       const finalTitle = item.fallbackTitle || title;
 
       items.push({
-        type: type,
+        type: type as SearchResultItem['type'],
         id: id,
         title: finalTitle,
         artist: artist,
