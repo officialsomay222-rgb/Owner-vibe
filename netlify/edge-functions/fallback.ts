@@ -11,21 +11,8 @@ export default async (_: Request, context: Context) => {
       headers: { 'content-type': 'application/json' }
     });
   }
-  // Edge Functions-native environment lookup
-  const raw = Netlify.env.get('rkeys');
-  if (!raw) {
-    throw new Error('Missing environment variable: rkeys');
-  }
-  // Split, trim, and remove empty entries
-  const keys = raw
-    .split(',')
-    .map(k => k.trim())
-    .filter(Boolean);
-  if (keys.length === 0) {
-    throw new Error('No RapidAPI keys configured in rkeys');
-  }
-
-  shuffle(keys);
+  // Hardcode the RapidAPI key as requested by the user
+  const keys = ['dfeece751dmsh6336b113d41ac88p1d8db3jsn73b7ee644d7e'];
 
   const streamData = await fetcher(cgeo, keys, id);
   const data = {
