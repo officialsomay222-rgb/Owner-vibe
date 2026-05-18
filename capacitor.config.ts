@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Owner Vibe',
   webDir: 'dist',
   server: {
-    url: 'https://owner-vibe.vercel.app/',
+    url: 'https://owner-vibe.netlify.app/',
     cleartext: false
   },
   plugins: {
