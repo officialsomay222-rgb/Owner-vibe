@@ -17,17 +17,41 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      window.dispatchEvent(new Event("local-storage"));
+      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       Logger.warn(`Error setting localStorage key "${key}":`, error);
     }
   };
 
-  useEffect(() => {
-    const handleStorageChange = () => {
+    useEffect(() => {
+    const handleStorageChange = (e: Event) => {
+      // Custom event from same window
+      if (e.type === 'local-storage') {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail?.key && customEvent.detail.key !== key) {
+          return; // Ignore if not our key
+        }
+      }
+
+      // Standard storage event from other tabs
+      if (e.type === 'storage') {
+        const storageEvent = e as StorageEvent;
+        if (storageEvent.key && storageEvent.key !== key) {
+          return; // Ignore if not our key
+        }
+      }
+
       try {
         const item = window.localStorage.getItem(key);
-        setStoredValue(item ? JSON.parse(item) : initialValue);
+        const newValue = item ? JSON.parse(item) : initialValue;
+
+        // Deep equality check to prevent re-renders for identical objects
+        setStoredValue(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(newValue)) {
+            return prev;
+          }
+          return newValue;
+        });
       } catch (error) {
         Logger.warn(`Error syncing localStorage key "${key}":`, error);
       }
@@ -38,7 +62,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       window.removeEventListener("local-storage", handleStorageChange);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [key, initialValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   return [storedValue, setValue];
 }
