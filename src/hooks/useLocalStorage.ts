@@ -17,17 +17,34 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      window.dispatchEvent(new Event("local-storage"));
+      // ⚡ OPTIMIZATION: Dispatch the specific key to prevent unrelated hooks from re-rendering
+      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       Logger.warn(`Error setting localStorage key "${key}":`, error);
     }
   };
 
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleStorageChange = (e: Event) => {
       try {
+        // ⚡ OPTIMIZATION: Ignore events meant for other localStorage keys
+        if (e.type === "local-storage" && (e as CustomEvent).detail?.key !== key) {
+          return;
+        }
+        if (e.type === "storage" && (e as StorageEvent).key !== key && (e as StorageEvent).key !== null) {
+          return;
+        }
+
         const item = window.localStorage.getItem(key);
-        setStoredValue(item ? JSON.parse(item) : initialValue);
+        const newValue = item ? JSON.parse(item) : initialValue;
+
+        // ⚡ OPTIMIZATION: Deep equality check to prevent unnecessary re-renders when data hasn't mutated
+        setStoredValue(prev => {
+           if (JSON.stringify(prev) !== JSON.stringify(newValue)) {
+              return newValue;
+           }
+           return prev;
+        });
       } catch (error) {
         Logger.warn(`Error syncing localStorage key "${key}":`, error);
       }
@@ -38,7 +55,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       window.removeEventListener("local-storage", handleStorageChange);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [key, initialValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   return [storedValue, setValue];
 }
