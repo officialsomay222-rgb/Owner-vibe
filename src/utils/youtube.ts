@@ -1,8 +1,6 @@
 import type { SearchResultItem } from '../types';
 import { Logger } from './logger';
-
-const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
-export const USE_VEROME_API = false;
+import { ConfigService } from '../services/ConfigService';
 
 // Cache to prevent redundant stream API requests for previously played songs
 // Caches expire after 1 hour (3600000 ms) since signed URLs often expire
@@ -15,8 +13,9 @@ const CACHE_TTL = 3600000;
 export async function searchYouTubeMusic(query: string, filter: string = 'songs'): Promise<SearchResultItem[]> {
   try {
     const encodedQuery = encodeURIComponent(query);
+    const config = await ConfigService.getConfig();
 
-    if (!USE_VEROME_API) {
+    if (!config.useVeromeApi) {
       // Map 'songs' to 'song' for ytify API
       let ytifyFilter = filter.toLowerCase();
       if (ytifyFilter === 'songs') ytifyFilter = 'song';
@@ -60,7 +59,7 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
 
         // Sometimes ytify returns 'channel' instead of 'artist'
         const isArtist = item.type === 'artist' || item.type === 'channel';
-        let type = isArtist ? 'artist' : item.type === 'album' ? 'album' : item.type === 'playlist' ? 'playlist' : 'song';
+        let type: "song" | "video" | "album" | "artist" | "playlist" = isArtist ? 'artist' : item.type === 'album' ? 'album' : item.type === 'playlist' ? 'playlist' : 'song';
 
         let title = item.title;
         if (!title && item.name) {
@@ -78,7 +77,8 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
       });
     }
 
-    let url = `${VEROME_API_BASE_URL}/api/search?q=${encodedQuery}`;
+    const baseUrl = config.veromeApiBaseUrl || 'https://verome-api.deno.dev';
+    let url = `${baseUrl}/api/search?q=${encodedQuery}`;
 
     // Verome API uses empty filter or omits filter for 'All'
     if (filter && filter.toLowerCase() !== 'all') {
@@ -132,9 +132,11 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
       if (!id) continue;
 
       const finalTitle = item.fallbackTitle || title;
+      const validTypes = ['song', 'video', 'album', 'artist', 'playlist'];
+      const resultType: "song" | "video" | "album" | "artist" | "playlist" = validTypes.includes(type) ? type : 'song';
 
       items.push({
-        type: type,
+        type: resultType,
         id: id,
         title: finalTitle,
         artist: artist,
@@ -190,10 +192,12 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
 
   try {
     const fallbackUrls: string[] = [];
+    const config = await ConfigService.getConfig();
+    const veromeBase = config.veromeApiBaseUrl || 'https://verome-api.deno.dev';
 
-    if (USE_VEROME_API) {
+    if (config.useVeromeApi) {
 
-      const targetUrl = `${VEROME_API_BASE_URL}/api/stream?id=${encodeURIComponent(videoId)}`;
+      const targetUrl = `${veromeBase}/api/stream?id=${encodeURIComponent(videoId)}`;
       const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
       const fetchUrl = isNative ? targetUrl : `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
       const response = await fetch(fetchUrl);
@@ -280,12 +284,12 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     if (fallbackUrls.length > 0) {
       // PROXY FIX: Rewrite googlevideo.com URLs to proxy via an Invidious instance
       // This bypasses the 403 Forbidden errors.
-      const proxyDomain = 'https://yt.omada.cafe';
+      const proxyDomain = config.proxyDomain || 'https://yt.omada.cafe';
       const rewrittenUrls = fallbackUrls.map(url => {
         try {
           const urlObj = new URL(url);
           if (urlObj.hostname.includes('googlevideo.com')) {
-             return proxyDomain + urlObj.pathname + urlObj.search;
+             return proxyDomain.replace(/\/$/, '') + urlObj.pathname + urlObj.search;
           }
           return url;
         } catch (e) {
@@ -299,7 +303,7 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     return fallbackUrls;
 
   } catch (err) {
-    Logger.error(`Failed to get audio stream for ${videoId} using ${USE_VEROME_API ? 'Verome API' : 'Netlify Edge Function'}:`, err);
+    Logger.error(`Failed to get audio stream for ${videoId}:`, err);
     return [];
   }
 }
