@@ -5,3 +5,7 @@
 [[edge_functions]]
   path = "/api/v1/videos/:id"
   function = "fallback"
+
+[[edge_functions]]
+  path = "/api/yt/*"
+  function = "youtubei"

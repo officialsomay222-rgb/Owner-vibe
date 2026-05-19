@@ -9,7 +9,8 @@ export default function AdminPanel() {
         useVeromeApi: false,
         proxyDomain: '',
         veromeApiBaseUrl: '',
-        rapidApiKey: ''
+        rapidApiKey: '',
+        useYoutubeiApi: false
     });
 
     const [isLoading, setIsLoading] = useState(true);
@@ -65,14 +66,14 @@ export default function AdminPanel() {
                         <Shield className="w-8 h-8 text-[#00d2ff]" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-[#aaa]">Admin Panel</h1>
+                        <h1 className="text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-[#f0f0f0] to-[#aaa] drop-shadow-sm">Admin Panel</h1>
                         <p className="text-[#888] font-medium">Global Configuration Management</p>
                     </div>
                 </div>
 
                 <div className="space-y-6">
                     {/* API Selection Section */}
-                    <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 shadow-lg backdrop-blur-sm">
+                    <div className="bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                         <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-white/[0.05]">
                             <Activity className="w-5 h-5 text-purple-400" />
                             <h2 className="text-xl font-bold tracking-wide">API Routing</h2>
@@ -85,6 +86,16 @@ export default function AdminPanel() {
                             description="Toggle this to switch traffic to the Verome proxy instead of Netlify Edge Functions."
                         />
 
+                        <div className="mt-4 border-t border-white/[0.05] pt-4">
+                            <Toggle
+                                enabled={!!config.useYoutubeiApi}
+                                onChange={(val) => setConfig({ ...config, useYoutubeiApi: val })}
+                                label="Use YouTubei API Proxy"
+                                description="Toggle this to route traffic through the new YouTube.js Netlify Edge Function. Overrides Verome and Fallback when enabled."
+                            />
+                        </div>
+
+
                         <div className="mt-6 flex flex-col space-y-2">
                             <label className="text-[14px] font-bold text-[#888] tracking-wide ml-1">Verome API Base URL</label>
                             <input
@@ -92,13 +103,13 @@ export default function AdminPanel() {
                                 value={config.veromeApiBaseUrl || ''}
                                 onChange={(e) => setConfig({ ...config, veromeApiBaseUrl: e.target.value })}
                                 placeholder="https://verome-api.deno.dev"
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00d2ff]/50 focus:bg-white/[0.02] transition-all font-medium tracking-wide placeholder-[#555]"
+                                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#00d2ff]/50 focus:border-transparent focus:bg-white/[0.05] transition-all font-medium tracking-wide placeholder-[#666] shadow-inner"
                             />
                         </div>
                     </div>
 
                     {/* Proxy Settings Section */}
-                    <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 shadow-lg backdrop-blur-sm">
+                    <div className="bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                         <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-white/[0.05]">
                             <Globe className="w-5 h-5 text-emerald-400" />
                             <h2 className="text-xl font-bold tracking-wide">Stream Proxy</h2>
@@ -111,14 +122,14 @@ export default function AdminPanel() {
                                 value={config.proxyDomain || ''}
                                 onChange={(e) => setConfig({ ...config, proxyDomain: e.target.value })}
                                 placeholder="https://yt.omada.cafe"
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.02] transition-all font-medium tracking-wide placeholder-[#555]"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-emerald-500/50 focus:border-transparent focus:bg-white/[0.02] transition-all font-medium tracking-wide placeholder-[#555]"
                             />
                             <p className="text-[13px] text-[#666] ml-1 mt-1">Used to rewrite googlevideo.com URLs to bypass 403 blocks.</p>
                         </div>
                     </div>
 
                      {/* Additional API Keys Section */}
-                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 shadow-lg backdrop-blur-sm">
+                     <div className="bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                         <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-white/[0.05]">
                             <Server className="w-5 h-5 text-orange-400" />
                             <h2 className="text-xl font-bold tracking-wide">External Keys</h2>
@@ -131,7 +142,7 @@ export default function AdminPanel() {
                                 value={config.rapidApiKey || ''}
                                 onChange={(e) => setConfig({ ...config, rapidApiKey: e.target.value })}
                                 placeholder="Enter RapidAPI Key"
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 focus:bg-white/[0.02] transition-all font-medium tracking-wide placeholder-[#555]"
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-orange-500/50 focus:border-transparent focus:bg-white/[0.02] transition-all font-medium tracking-wide placeholder-[#555]"
                             />
                         </div>
                     </div>

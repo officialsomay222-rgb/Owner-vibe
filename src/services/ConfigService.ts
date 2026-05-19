@@ -10,12 +10,14 @@ export interface GlobalConfig {
     proxyDomain: string;
     rapidApiKey?: string;
     veromeApiBaseUrl?: string;
+    useYoutubeiApi?: boolean;
 }
 
 const defaultConfig: GlobalConfig = {
     useVeromeApi: false,
     proxyDomain: 'https://yt.omada.cafe',
     veromeApiBaseUrl: 'https://verome-api.deno.dev',
+    useYoutubeiApi: false,
 };
 
 // In-memory cache to avoid repeated network requests

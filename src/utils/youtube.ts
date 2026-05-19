@@ -14,6 +14,16 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
   try {
     const encodedQuery = encodeURIComponent(query);
     const config = await ConfigService.getConfig();
+    if (config.useYoutubeiApi) {
+      try {
+        const response = await fetch(`/api/yt/search?q=${encodedQuery}`);
+        if (!response.ok) throw new Error('YouTubei search failed');
+        const data = await response.json();
+        return data.results || [];
+      } catch (err) {
+        Logger.error('Failed to search via YouTubei:', err);
+      }
+    }
 
     if (!config.useVeromeApi) {
       // Map 'songs' to 'song' for ytify API
@@ -195,7 +205,31 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     const config = await ConfigService.getConfig();
     const veromeBase = config.veromeApiBaseUrl || 'https://verome-api.deno.dev';
 
-    if (config.useVeromeApi) {
+    if (config.useYoutubeiApi) {
+      const response = await fetch(`/api/yt/stream/${encodeURIComponent(videoId)}`);
+      if (!response.ok) throw new Error(`YouTubei stream fetch failed: ${response.status}`);
+      const data = await response.json();
+
+      if (!data.success || !data.streamingUrls || data.streamingUrls.length === 0) {
+        return [];
+      }
+
+      const targetStreams = data.streamingUrls.filter((s: any) => s.itag === targetItag);
+      for (const s of targetStreams) {
+        if (s.url && !fallbackUrls.includes(s.url)) fallbackUrls.push(s.url);
+      }
+
+      if (targetItag !== 140) {
+        const normalStreams = data.streamingUrls.filter((s: any) => s.itag === 140);
+        for (const s of normalStreams) {
+          if (s.url && !fallbackUrls.includes(s.url)) fallbackUrls.push(s.url);
+        }
+      }
+
+      for (const s of data.streamingUrls) {
+        if (s.url && !fallbackUrls.includes(s.url)) fallbackUrls.push(s.url);
+      }
+    } else if (config.useVeromeApi) {
 
       const targetUrl = `${veromeBase}/api/stream?id=${encodeURIComponent(videoId)}`;
       const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
