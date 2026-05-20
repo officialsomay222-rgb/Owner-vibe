@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigService, GlobalConfig } from '../services/ConfigService';
-import { Toggle, ActionButton } from './SettingsUI';
+import { ActionButton } from './SettingsUI';
 import { Save, Server, Shield, Globe, Activity, CheckCircle, RefreshCcw } from 'lucide-react';
 import { Logger } from '../utils/logger';
 
@@ -79,24 +79,55 @@ export default function AdminPanel() {
                             <h2 className="text-xl font-bold tracking-wide">API Routing</h2>
                         </div>
 
-                        <Toggle
-                            enabled={config.useVeromeApi}
-                            onChange={(val) => setConfig({ ...config, useVeromeApi: val })}
-                            label="Use Verome API"
-                            description="Toggle this to switch traffic to the Verome proxy instead of Netlify Edge Functions."
-                        />
+                        <div className="flex flex-col space-y-4">
+                            <label className="flex items-center space-x-3 p-3 rounded-xl border border-white/5 hover:bg-white/[0.02] cursor-pointer transition-all">
+                                <input
+                                    type="radio"
+                                    name="apiProvider"
+                                    value="verome"
+                                    checked={config.useVeromeApi && !config.useYoutubeiApi}
+                                    onChange={() => setConfig({ ...config, useVeromeApi: true, useYoutubeiApi: false })}
+                                    className="w-5 h-5 accent-[#00d2ff]"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-white">Verome API</span>
+                                    <span className="text-xs text-[#888]">Use the Verome proxy for search and streaming</span>
+                                </div>
+                            </label>
 
-                        <div className="mt-4 border-t border-white/[0.05] pt-4">
-                            <Toggle
-                                enabled={!!config.useYoutubeiApi}
-                                onChange={(val) => setConfig({ ...config, useYoutubeiApi: val })}
-                                label="Use YouTubei API Proxy"
-                                description="Toggle this to route traffic through the new YouTube.js Netlify Edge Function. Overrides Verome and Fallback when enabled."
-                            />
+                            <label className="flex items-center space-x-3 p-3 rounded-xl border border-white/5 hover:bg-white/[0.02] cursor-pointer transition-all">
+                                <input
+                                    type="radio"
+                                    name="apiProvider"
+                                    value="youtubei"
+                                    checked={config.useYoutubeiApi}
+                                    onChange={() => setConfig({ ...config, useYoutubeiApi: true, useVeromeApi: false })}
+                                    className="w-5 h-5 accent-[#00d2ff]"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-white">YouTubei API Proxy</span>
+                                    <span className="text-xs text-[#888]">Route traffic through YouTube.js Netlify Edge Function</span>
+                                </div>
+                            </label>
+
+                            <label className="flex items-center space-x-3 p-3 rounded-xl border border-white/5 hover:bg-white/[0.02] cursor-pointer transition-all">
+                                <input
+                                    type="radio"
+                                    name="apiProvider"
+                                    value="fallback"
+                                    checked={!config.useVeromeApi && !config.useYoutubeiApi}
+                                    onChange={() => setConfig({ ...config, useVeromeApi: false, useYoutubeiApi: false })}
+                                    className="w-5 h-5 accent-[#00d2ff]"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-white">Fallback (RapidAPI / Ytify)</span>
+                                    <span className="text-xs text-[#888]">Use default fallback Edge Functions and APIs</span>
+                                </div>
+                            </label>
                         </div>
 
 
-                        <div className="mt-6 flex flex-col space-y-2">
+                        <div className="mt-6 border-t border-white/[0.05] pt-6 flex flex-col space-y-2">
                             <label className="text-[14px] font-bold text-[#888] tracking-wide ml-1">Verome API Base URL</label>
                             <input
                                 type="text"

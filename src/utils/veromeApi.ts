@@ -1,7 +1,11 @@
 import { Song } from '../types';
 import { Logger } from './logger';
+import { ConfigService } from '../services/ConfigService';
 
-export const VEROME_API_BASE_URL = 'https://verome-api.deno.dev';
+export const getVeromeApiBaseUrl = (): string => {
+  const config = ConfigService.getSyncConfig();
+  return config.veromeApiBaseUrl || 'https://verome-api.deno.dev';
+};
 
 export interface DetailsData {
   title: string;
@@ -12,7 +16,7 @@ export interface DetailsData {
 
 export async function fetchPlaylistDetails(playlistId: string): Promise<DetailsData | null> {
   try {
-    const res = await fetch(`${VEROME_API_BASE_URL}/api/playlists/${playlistId}`);
+    const res = await fetch(`${getVeromeApiBaseUrl()}/api/playlists/${playlistId}`);
     if (!res.ok) return null;
     const data = await res.json();
 
@@ -40,7 +44,7 @@ export async function fetchPlaylistDetails(playlistId: string): Promise<DetailsD
 
 export async function fetchAlbumDetails(browseId: string): Promise<DetailsData | null> {
   try {
-    const res = await fetch(`${VEROME_API_BASE_URL}/api/albums/${browseId}`);
+    const res = await fetch(`${getVeromeApiBaseUrl()}/api/albums/${browseId}`);
     if (!res.ok) return null;
     const data = await res.json();
 
@@ -68,7 +72,7 @@ export async function fetchAlbumDetails(browseId: string): Promise<DetailsData |
 
 export async function fetchArtistDetails(browseId: string): Promise<DetailsData | null> {
   try {
-    const res = await fetch(`${VEROME_API_BASE_URL}/api/artists/${browseId}`);
+    const res = await fetch(`${getVeromeApiBaseUrl()}/api/artists/${browseId}`);
     if (!res.ok) return null;
     const data = await res.json();
 
