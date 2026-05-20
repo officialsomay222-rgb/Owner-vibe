@@ -49,7 +49,8 @@ export default async (req: Request, context: Context) => {
             const videoId = streamMatch[1];
 
             // Get basic info to fetch the streaming data
-            const info = await yt.getBasicInfo(videoId);
+            // We use ANDROID client to avoid signature cipher requirement for audio streams
+            const info = await yt.getBasicInfo(videoId, { client: 'ANDROID' });
 
             if (!info || !info.streaming_data) {
                 return new Response(JSON.stringify({ error: 'No streaming data found' }), { status: 404 });
@@ -57,7 +58,8 @@ export default async (req: Request, context: Context) => {
 
             // Return the adaptive formats (audio)
             const adaptiveFormats = info.streaming_data.adaptive_formats || [];
-            const audioFormats = adaptiveFormats.filter((f: any) => f.mime_type && f.mime_type.startsWith('audio'));
+            // Use has_audio and !has_video as more robust check than mime_type string prefix
+            const audioFormats = adaptiveFormats.filter((f: any) => (f.mime_type && f.mime_type.startsWith('audio')) || (f.has_audio && !f.has_video));
 
             return new Response(JSON.stringify({
                 success: true,
