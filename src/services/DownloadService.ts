@@ -16,7 +16,7 @@ export interface OfflineTrack {
   downloadedAt: number;
 }
 
-import { VEROME_API_BASE_URL } from '../utils/veromeApi';
+import { getVeromeApiBaseUrl } from '../utils/veromeApi';
 
 export async function downloadTrackToVault(
   songId: string,
@@ -26,7 +26,7 @@ export async function downloadTrackToVault(
 ): Promise<OfflineTrack> {
   try {
     // 1. Fetch Stream Links
-    const res = await fetch(`${VEROME_API_BASE_URL}/api/stream?id=${songId}`);
+    const res = await fetch(`${getVeromeApiBaseUrl()}/api/stream?id=${songId}`);
     if (!res.ok) {
       throw new Error(`Failed to fetch streams: ${res.status} ${res.statusText}`);
     }
