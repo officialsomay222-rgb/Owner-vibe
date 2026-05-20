@@ -60,6 +60,8 @@ export const MiniPlayer = () => {
 
           <div className="flex items-center space-x-2 shrink-0 pr-2">
             <button
+              aria-label={isLoadingStream ? 'Loading stream' : isPlaying ? 'Pause' : 'Play'}
+              title={isLoadingStream ? 'Loading stream' : isPlaying ? 'Pause' : 'Play'}
               onClick={(e) => {
                 e.stopPropagation();
                 if (!isLoadingStream) {
@@ -78,6 +80,8 @@ export const MiniPlayer = () => {
               )}
             </button>
             <button
+              aria-label="Next track"
+              title="Next track"
               onClick={(e) => {
                 e.stopPropagation();
                 playNext();
