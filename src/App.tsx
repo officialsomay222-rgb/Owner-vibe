@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Toggle, Select, ActionButton } from './components/SettingsUI';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { 
@@ -83,26 +83,33 @@ const HomeTab = () => {
 
     // 1. Prepare data for Top 2x3 Grid (6 items)
     // Prioritize playHistory, then favorites, then fallback to discoverSongs
-    const gridItems = [];
+    // ⚡ OPTIMIZATION: Memoized array computation to prevent redundant array allocations and
+    // loops on every render, since playHistory changes infrequently compared to component renders.
+    const gridItems = useMemo(() => {
+        const items = [];
 
-    // Add up to 6 from playHistory
-    for (let i = 0; i < playHistory.length && gridItems.length < 6; i++) {
-        if (!gridItems.find(item => item.videoId === playHistory[i].videoId)) {
-            gridItems.push({...playHistory[i], type: 'song'});
+        // Add up to 6 from playHistory
+        for (let i = 0; i < playHistory.length && items.length < 6; i++) {
+            if (!items.find(item => item.videoId === playHistory[i].videoId)) {
+                items.push({...playHistory[i], type: 'song'});
+            }
         }
-    }
 
-    // Fill remaining with fallback data
-    let fallbackIndex = 0;
-    while (gridItems.length < 6 && fallbackIndex < discoverSongs.length) {
-        if (!gridItems.find(item => item.videoId === discoverSongs[fallbackIndex].videoId)) {
-            gridItems.push({...discoverSongs[fallbackIndex], type: 'song'});
+        // Fill remaining with fallback data
+        let fallbackIndex = 0;
+        while (items.length < 6 && fallbackIndex < discoverSongs.length) {
+            if (!items.find(item => item.videoId === discoverSongs[fallbackIndex].videoId)) {
+                items.push({...discoverSongs[fallbackIndex], type: 'song'});
+            }
+            fallbackIndex++;
         }
-        fallbackIndex++;
-    }
+        return items;
+    }, [playHistory]); // discoverSongs is constant
 
     // 2. Prepare data for "Recently Played" row
-    const recentItems = playHistory.length > 0 ? playHistory.slice(0, 15) : discoverSongs;
+    const recentItems = useMemo(() =>
+        playHistory.length > 0 ? playHistory.slice(0, 15) : discoverSongs
+    , [playHistory]);
 
     return (
     <div className="flex flex-col pt-[84px] pb-32 px-4 space-y-8 animate-in fade-in duration-500">
