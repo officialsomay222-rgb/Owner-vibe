@@ -16,7 +16,9 @@ export async function searchYouTubeMusic(query: string, filter: string = 'songs'
     const config = await ConfigService.getConfig();
 
     if (config.useYoutubeiApi) {
-      const response = await fetch(`/api/yt/search?q=${encodedQuery}`);
+      const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+      const apiUrl = isNative ? `https://owner-vibe.netlify.app/api/yt/search?q=${encodedQuery}` : `/api/yt/search?q=${encodedQuery}`;
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error('YouTubei search failed');
       const data = await response.json();
       return data.results || [];
@@ -202,7 +204,9 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
     const veromeBase = config.veromeApiBaseUrl || 'https://verome-api.deno.dev';
 
     if (config.useYoutubeiApi) {
-      const response = await fetch(`/api/yt/stream/${encodeURIComponent(videoId)}`);
+      const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+      const apiUrl = isNative ? `https://owner-vibe.netlify.app/api/yt/stream/${encodeURIComponent(videoId)}` : `/api/yt/stream/${encodeURIComponent(videoId)}`;
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error(`YouTubei stream fetch failed: ${response.status}`);
       const data = await response.json();
 
@@ -264,7 +268,9 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
       }
     } else {
       // Use the new Netlify Edge Function proxy fallback
-      const response = await fetch(`/api/v1/videos/${encodeURIComponent(videoId)}`);
+      const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+      const apiUrl = isNative ? `https://owner-vibe.netlify.app/api/v1/videos/${encodeURIComponent(videoId)}` : `/api/v1/videos/${encodeURIComponent(videoId)}`;
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
         throw new Error(`Stream fetch failed with status: ${response.status}`);
