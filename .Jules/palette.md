@@ -1,3 +1,7 @@
 ## 2024-05-13 - Enhance A11y and UX for Settings UI Form Components
 **Learning:** React fragments or loose `<span>` elements around form controls severely harm screen reader accessibility. By explicitly adding unique generated IDs via `React.useId()` and tying them to `<button>` through `aria-labelledby` and `aria-describedby` (as well as adding standard `<label htmlFor="...">`), standard form fields become significantly easier to use. Similarly, mobile focus outlines often require high-contrast color shifts (`focus-visible:ring-offset-2`) since background darkness levels can vary randomly depending on user/system app themes.
 **Action:** When creating modular generic input wrappers (Toggle/Select/Action), inject automatic ID generation and explicitly pair titles, descriptions, and controls. Always test focus rings with dual offset properties to ensure visibility across dynamic backgrounds.
+
+## 2024-05-20 - Ensure A11y on Icon-Only Media Buttons
+**Learning:** Icon-only buttons used for media controls (like Play/Pause and Next track) are often ignored by screen readers and missing standard tooltips if not explicitly labelled. For dynamic buttons like Play/Pause, static labels are insufficient.
+**Action:** Always add dynamic `aria-label` and `title` attributes that update according to component state (e.g., `aria-label={isLoadingStream ? 'Loading stream' : isPlaying ? 'Pause' : 'Play'}`) to provide continuous accurate feedback for accessibility and usability.
