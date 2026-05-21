@@ -58,28 +58,46 @@ export default async (req: Request, context: Context) => {
             const videoId = streamMatch[1];
 
             // Get basic info to fetch the streaming data
-            // We use ANDROID client first, but fallback to MWEB or WEB if streaming_data is missing
+            // We use IOS client first because it natively yields stream URLs without requiring deciphering often,
+            // then fallback to ANDROID, MWEB, or WEB if streaming_data is missing
             let info;
+
             try {
-                info = await yt.getBasicInfo(videoId, { client: 'ANDROID' });
-            } catch (e) {}
+                info = await yt.getBasicInfo(videoId, { client: 'IOS' });
+            } catch (e) {
+                console.error('IOS client failed:', e);
+            }
+
+            if (!info || !info.streaming_data) {
+                try {
+                    info = await yt.getBasicInfo(videoId, { client: 'ANDROID' });
+                } catch (e) {
+                    console.error('ANDROID client failed:', e);
+                }
+            }
 
             if (!info || !info.streaming_data) {
                 try {
                     info = await yt.getBasicInfo(videoId, { client: 'MWEB' });
-                } catch (e) {}
+                } catch (e) {
+                    console.error('MWEB client failed:', e);
+                }
             }
 
             if (!info || !info.streaming_data) {
                 try {
                     info = await yt.getBasicInfo(videoId, { client: 'WEB' });
-                } catch (e) {}
+                } catch (e) {
+                    console.error('WEB client failed:', e);
+                }
             }
 
             if (!info || !info.streaming_data) {
                 try {
                     info = await yt.getBasicInfo(videoId, { client: 'TV' });
-                } catch (e) {}
+                } catch (e) {
+                    console.error('TV client failed:', e);
+                }
             }
 
             if (!info || !info.streaming_data) {
