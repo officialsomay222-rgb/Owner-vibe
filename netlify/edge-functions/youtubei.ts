@@ -1,12 +1,36 @@
 import { Config, Context } from '@netlify/edge-functions';
-import { Innertube } from 'youtubei.js';
+import { Innertube, Utils } from 'youtubei.js';
+import Jinter from 'jintr';
+
+// Provide the evaluator for youtubei.js to decipher signatures
+Utils.Platform.shim.eval = (script: any, env: any) => {
+    // Edge functions sometimes support new Function, but using Jintr is safer.
+    // However, youtubei requires evaluating an IIFE or similar.
+    // Actually `new Function` is much faster and supported in Deno. Let's try it first.
+    try {
+        const fn = new Function(...Object.keys(env), script.output);
+        const result = fn(...Object.values(env));
+        return result;
+    } catch(e) {
+        // Fallback to Jinter if new Function is restricted (e.g. CSP in browsers, but edge is usually fine)
+        const code = `
+            (function() {
+                ${script.output}
+            })();
+        `;
+        const jinter = new (Jinter as any)(code as string);
+        for (const [key, value] of Object.entries(env)) {
+            jinter.scope.set(key, value);
+        }
+        return jinter.evaluate() as any;
+    }
+};
 
 let innertube: Innertube | null = null;
 
 async function getInnertube() {
     if (!innertube) {
         innertube = await Innertube.create({
-             // We can optionally add proxy/client config here
              generate_session_locally: true
         });
     }
@@ -49,27 +73,66 @@ export default async (req: Request, context: Context) => {
             const videoId = streamMatch[1];
 
             // Get basic info to fetch the streaming data
-            // We use ANDROID client to avoid signature cipher requirement for audio streams
-            const info = await yt.getBasicInfo(videoId, { client: 'ANDROID' });
+            // We use ANDROID client first, but fallback to MWEB or WEB if streaming_data is missing
+            let info;
+            try {
+                info = await yt.getBasicInfo(videoId, { client: 'ANDROID' });
+            } catch (e) {}
 
             if (!info || !info.streaming_data) {
-                return new Response(JSON.stringify({ error: 'No streaming data found' }), { status: 404 });
+                try {
+                    info = await yt.getBasicInfo(videoId, { client: 'MWEB' });
+                } catch (e) {}
+            }
+
+            if (!info || !info.streaming_data) {
+                try {
+                    info = await yt.getBasicInfo(videoId, { client: 'WEB' });
+                } catch (e) {}
+            }
+
+            if (!info || !info.streaming_data) {
+                try {
+                    info = await yt.getBasicInfo(videoId, { client: 'TV' });
+                } catch (e) {}
+            }
+
+            if (!info || !info.streaming_data) {
+                return new Response(JSON.stringify({ error: 'No streaming data found after multiple clients' }), { status: 404 });
             }
 
             // Return the adaptive formats (audio)
             const adaptiveFormats = info.streaming_data.adaptive_formats || [];
-            // Use has_audio and !has_video as more robust check than mime_type string prefix
             const audioFormats = adaptiveFormats.filter((f: any) => (f.mime_type && f.mime_type.startsWith('audio')) || (f.has_audio && !f.has_video));
+
+            const streamingUrls = [];
+            for (const f of audioFormats) {
+                let streamUrl = f.url;
+                if (!streamUrl && f.signature_cipher) {
+                    try {
+                        if (typeof f.decipher === 'function') {
+                            await f.decipher(yt.session.player);
+                        }
+                        streamUrl = f.url;
+                    } catch (decipherError) {
+                        console.error('Decipher error:', decipherError);
+                    }
+                }
+
+                if (streamUrl) {
+                    streamingUrls.push({
+                        url: streamUrl,
+                        mimeType: f.mime_type,
+                        bitrate: f.bitrate,
+                        quality: f.audio_quality,
+                        itag: f.itag
+                    });
+                }
+            }
 
             return new Response(JSON.stringify({
                 success: true,
-                streamingUrls: audioFormats.map((f: any) => ({
-                    url: f.url || f.signature_cipher,
-                    mimeType: f.mime_type,
-                    bitrate: f.bitrate,
-                    quality: f.audio_quality,
-                    itag: f.itag
-                }))
+                streamingUrls
             }), {
                 headers: { 'content-type': 'application/json' }
             });
