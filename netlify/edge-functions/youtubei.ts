@@ -1,29 +1,14 @@
 import { Config, Context } from '@netlify/edge-functions';
 import { Innertube, Utils } from 'youtubei.js';
-import Jinter from 'jintr';
 
-// Provide the evaluator for youtubei.js to decipher signatures
+// Netlify Edge functions run on Deno, which supports `new Function()` natively.
+// We don't need Jintr (which causes bundle size/deployment issues in edge environments).
+// Let's use `new Function()` directly for the fastest, most reliable evaluator on Edge!
+
 Utils.Platform.shim.eval = (script: any, env: any) => {
-    // Edge functions sometimes support new Function, but using Jintr is safer.
-    // However, youtubei requires evaluating an IIFE or similar.
-    // Actually `new Function` is much faster and supported in Deno. Let's try it first.
-    try {
-        const fn = new Function(...Object.keys(env), script.output);
-        const result = fn(...Object.values(env));
-        return result;
-    } catch(e) {
-        // Fallback to Jinter if new Function is restricted (e.g. CSP in browsers, but edge is usually fine)
-        const code = `
-            (function() {
-                ${script.output}
-            })();
-        `;
-        const jinter = new (Jinter as any)(code as string);
-        for (const [key, value] of Object.entries(env)) {
-            jinter.scope.set(key, value);
-        }
-        return jinter.evaluate() as any;
-    }
+    const fn = new Function(...Object.keys(env), script.output);
+    const result = fn(...Object.values(env));
+    return result;
 };
 
 let innertube: Innertube | null = null;
