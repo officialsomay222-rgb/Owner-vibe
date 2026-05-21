@@ -4,7 +4,7 @@ import { Play, Pause, SkipForward } from 'lucide-react';
 import { useMusic } from './MusicContext';
 import { useAudioTime } from './hooks/useAudioTime';
 
-const MiniProgressBar = ({ duration, audioRef }: { duration: number, audioRef: React.RefObject<HTMLAudioElement | null> }) => {
+const MiniProgressBar = ({ duration, audioRef }: { duration: number, audioRef: React.RefObject<HTMLMediaElement | null> }) => {
   const currentTime = useAudioTime(audioRef);
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 

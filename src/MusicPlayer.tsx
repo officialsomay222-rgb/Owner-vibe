@@ -15,7 +15,7 @@ const formatTime = (time: number) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const ProgressBar = ({ duration, dominantColor, seekTo, audioRef }: { duration: number, dominantColor: string, seekTo: (time: number) => void, audioRef: React.RefObject<HTMLAudioElement | null> }) => {
+const ProgressBar = ({ duration, dominantColor, seekTo, audioRef }: { duration: number, dominantColor: string, seekTo: (time: number) => void, audioRef: React.RefObject<HTMLMediaElement | null> }) => {
   const currentTime = useAudioTime(audioRef);
   const [isDragging, setIsDragging] = useState(false);
 

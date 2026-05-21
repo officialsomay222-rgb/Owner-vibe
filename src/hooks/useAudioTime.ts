@@ -7,7 +7,7 @@ import { useState, useEffect, RefObject } from 'react';
  * this local hook prevents the entire app (and heavy components like tabs) from
  * re-rendering 4 times per second during audio playback.
  */
-export const useAudioTime = (audioRef: RefObject<HTMLAudioElement | null>) => {
+export const useAudioTime = (audioRef: RefObject<HTMLMediaElement | null>) => {
   const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
