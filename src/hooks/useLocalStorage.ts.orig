@@ -31,7 +31,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       // For cross-tab changes (StorageEvent)
       if (e.type === "storage") {
         const storageEvent = e as StorageEvent;
-        if (storageEvent.key !== null && storageEvent.key !== key) return; // Only process changes for this key, or null if cleared
+        if (storageEvent.key !== key) return; // Only process changes for this key
       }
       // For in-app changes (CustomEvent)
       else if (e.type === "local-storage") {
