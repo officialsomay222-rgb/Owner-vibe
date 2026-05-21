@@ -1,0 +1,3 @@
+## 2024-05-21 - Stateful ARIA labels for media controls
+**Learning:** Found that custom media player interfaces (like MiniPlayer and MusicPlayer) in this app completely lacked `aria-label` attributes on icon-only control buttons. Crucially, these labels cannot just be static; they must be stateful (e.g., `aria-label={isPlaying ? 'Pause' : 'Play'}`) to accurately convey the *current action* the button will perform to screen reader users, preventing confusion.
+**Action:** When auditing or adding new interactive media controls (toggles, playback buttons), always verify that the `aria-label` and `title` attributes dynamically reflect the underlying state of the action.
