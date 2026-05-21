@@ -246,24 +246,24 @@ export async function getYouTubeAudioStream(videoId: string): Promise<string[]> 
       }
 
       // Prioritize streams matching the target itag
-      const targetStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === targetItag);
+      const targetStreams = data.streamingUrls.filter((s: any) => extractItag(s.directUrl || s.url) === targetItag);
       for (const s of targetStreams) {
-        const url = s.url || s.directUrl;
+        const url = s.directUrl || s.url;
         if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
       }
 
       // Add fallback itag 140 (normal) if target wasn't 140
       if (targetItag !== 140) {
-        const normalStreams = data.streamingUrls.filter((s: any) => extractItag(s.url || s.directUrl) === 140);
+        const normalStreams = data.streamingUrls.filter((s: any) => extractItag(s.directUrl || s.url) === 140);
         for (const s of normalStreams) {
-          const url = s.url || s.directUrl;
+          const url = s.directUrl || s.url;
           if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
         }
       }
 
       // Add all other remaining streams
       for (const s of data.streamingUrls) {
-        const url = s.url || s.directUrl;
+        const url = s.directUrl || s.url;
         if (url && !fallbackUrls.includes(url)) fallbackUrls.push(url);
       }
     } else {
