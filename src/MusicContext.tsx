@@ -4,6 +4,7 @@ import { musicService } from './services/MusicService';
 import { MediaSession } from '@capgo/capacitor-media-session';
 import { Logger } from './utils/logger';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useShakaPlayer } from './hooks/useShakaPlayer';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 
@@ -26,7 +27,7 @@ interface MusicContextType {
   playPrevious: () => void;
   seekTo: (time: number) => void;
   setIsExpanded: (expanded: boolean) => void;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
+  audioRef: React.RefObject<HTMLVideoElement | null>;
   playHistory: Song[];
   favorites: Song[];
   toggleFavorite: (song: Song) => void;
@@ -63,7 +64,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [songToAdd, setSongToAdd] = useState<Song | null>(null);
   const [customPlaylists, setCustomPlaylists] = useLocalStorage<any[]>('custom_playlists', []);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLVideoElement | null>(null);
+  const { player: shakaPlayer, sabrAdapter, innertube } = useShakaPlayer(audioRef);
 
   const safePlay = async () => {
     if (!audioRef.current) return;
@@ -297,6 +299,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.removeAttribute('src');
+      if(shakaPlayer) shakaPlayer.unload();
       audioRef.current.load();
     }
 
@@ -343,6 +346,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
             audioRef.current.removeAttribute('src');
+      if(shakaPlayer) shakaPlayer.unload();
             audioRef.current.load();
           }
           setCurrentSong(queue[currentIndex + 1]);
@@ -354,6 +358,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             audioRef.current.pause();
             audioRef.current.currentTime = 0;
             audioRef.current.removeAttribute('src');
+      if(shakaPlayer) shakaPlayer.unload();
             audioRef.current.load();
           }
           setCurrentSong(queue[0]);
@@ -374,6 +379,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         audioRef.current.removeAttribute('src');
+      if(shakaPlayer) shakaPlayer.unload();
         audioRef.current.load();
       }
       setCurrentSong(queue[currentIndex - 1]);
@@ -385,6 +391,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         audioRef.current.removeAttribute('src');
+      if(shakaPlayer) shakaPlayer.unload();
         audioRef.current.load();
       }
       setCurrentSong(queue[queue.length - 1]);
@@ -533,8 +540,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           </div>
         </div>
       )}
-      <audio
+      <video
         ref={audioRef}
+        style={{ display: "none" }}
         src={offlineUrl || currentSong?.streamUrl || ''}
         playsInline={true}
         onLoadStart={() => Logger.log('1. Audio: Load Started')}
