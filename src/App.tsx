@@ -365,7 +365,7 @@ const SearchTab = () => {
                     {searchHistory.length > 0 && (
                         <div className="flex items-center justify-between mb-4 pl-1">
                             <h3 className="text-[14px] font-bold text-white/60 light:text-gray-500 uppercase tracking-widest">Recent Searches</h3>
-                            <button onClick={clearHistory} className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
+                            <button aria-label="Clear history" title="Clear history" onClick={clearHistory} className="text-[12px] font-bold text-[#00d2ff] light:text-blue-500 hover:text-white light:hover:text-blue-700 transition-colors uppercase tracking-wider">Clear</button>
                         </div>
                     )}
 
@@ -640,6 +640,8 @@ const LibraryTab = () => {
         <div className="flex items-center justify-between mb-8 pl-1">
             <h2 className="text-[28px] font-extrabold text-white/95 light:text-gray-900 tracking-tight transition-colors">Library</h2>
             <button
+                aria-label="Create playlist"
+                title="Create playlist"
                 onClick={() => setIsCreatingPlaylist(true)}
                 className="flex items-center justify-center w-10 h-10 bg-[#00d2ff]/10 light:bg-blue-500/10 border border-[#00d2ff]/20 light:border-blue-500/20 rounded-full text-[#00d2ff] light:text-blue-600 hover:bg-[#00d2ff]/20 light:hover:bg-blue-500/20 active:scale-95 transition-all duration-300 shadow-sm"
             >
