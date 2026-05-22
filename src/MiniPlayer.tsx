@@ -9,7 +9,7 @@ const MiniProgressBar = ({ duration, audioRef }: { duration: number, audioRef: R
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full">
+    <div className="absolute bottom-0 left-0 h-[2px] bg-white/20 w-full pointer-events-none">
       <div
         className="h-full bg-white/80 transition-all duration-100 ease-linear"
         style={{ width: `${progress}%` }}
@@ -34,13 +34,13 @@ export const MiniPlayer = () => {
         className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] inset-x-2 z-40 max-w-md mx-auto"
       >
         <div
-          onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-transform has-[.expand-btn:focus-visible]:ring-2 has-[.expand-btn:active]:scale-[0.98]"
         >
+          <button className="expand-btn absolute inset-0 w-full h-full z-0 opacity-0 cursor-pointer" onClick={() => setIsExpanded(true)} aria-label="Expand player" title="Expand player" />
           {/* Progress Bar Line */}
           <MiniProgressBar duration={duration} audioRef={audioRef} />
 
-          <div className="flex items-center space-x-3 overflow-hidden">
+          <div className="flex items-center space-x-3 overflow-hidden pointer-events-none">
             <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
               <img
                 src={mediumResThumb}
@@ -58,7 +58,7 @@ export const MiniPlayer = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 shrink-0 pr-2">
+          <div className="flex items-center space-x-2 shrink-0 pr-2 pointer-events-none">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -67,7 +67,9 @@ export const MiniPlayer = () => {
                 }
               }}
               disabled={isLoadingStream}
-              className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              title={isPlaying ? 'Pause' : 'Play'}
+              className={`p-2 transition-colors pointer-events-auto relative z-10 ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
               {isLoadingStream ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -82,7 +84,9 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
-              className="p-2 text-white hover:text-white/80 transition-colors"
+              aria-label="Next song"
+              title="Next song"
+              className="p-2 text-white hover:text-white/80 transition-colors pointer-events-auto relative z-10"
             >
               <SkipForward className="w-6 h-6 fill-current" />
             </button>
