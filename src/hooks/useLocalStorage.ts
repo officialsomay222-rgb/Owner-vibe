@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Logger } from "../utils/logger";
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+  const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
+
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      return item ? JSON.parse(item) : initialValueRef.current;
     } catch (error) {
       Logger.warn(`Error reading localStorage key "${key}":`, error);
-      return initialValue;
+      return initialValueRef.current;
     }
   });
 
@@ -17,28 +20,36 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      window.dispatchEvent(new Event("local-storage"));
+      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       Logger.warn(`Error setting localStorage key "${key}":`, error);
     }
   };
 
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleStorageChange = (event: Event | StorageEvent) => {
+      if (event instanceof StorageEvent) {
+        if (event.key !== null && event.key !== key) return;
+      } else if (event instanceof CustomEvent) {
+        if (event.detail?.key !== null && event.detail?.key !== key) return;
+      }
+
       try {
         const item = window.localStorage.getItem(key);
-        setStoredValue(item ? JSON.parse(item) : initialValue);
+        setStoredValue(item ? JSON.parse(item) : initialValueRef.current);
       } catch (error) {
         Logger.warn(`Error syncing localStorage key "${key}":`, error);
       }
     };
-    window.addEventListener("local-storage", handleStorageChange);
-    window.addEventListener("storage", handleStorageChange);
+
+    window.addEventListener("local-storage", handleStorageChange as EventListener);
+    window.addEventListener("storage", handleStorageChange as EventListener);
+
     return () => {
-      window.removeEventListener("local-storage", handleStorageChange);
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("local-storage", handleStorageChange as EventListener);
+      window.removeEventListener("storage", handleStorageChange as EventListener);
     };
-  }, [key, initialValue]);
+  }, [key]);
 
   return [storedValue, setValue];
 }
