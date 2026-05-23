@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Logger } from "../utils/logger";
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
@@ -17,17 +17,30 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      window.dispatchEvent(new Event("local-storage"));
+      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       Logger.warn(`Error setting localStorage key "${key}":`, error);
     }
   };
 
+  const initialValueRef = useRef(initialValue);
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleStorageChange = (e: Event) => {
+      // For cross-tab storage events, check e.key
+      if (e.type === "storage") {
+        const storageEvent = e as StorageEvent;
+        if (storageEvent.key !== null && storageEvent.key !== key) return;
+      }
+
+      // For local custom events, check e.detail.key
+      if (e.type === "local-storage") {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail && customEvent.detail.key !== key) return;
+      }
+
       try {
         const item = window.localStorage.getItem(key);
-        setStoredValue(item ? JSON.parse(item) : initialValue);
+        setStoredValue(item ? JSON.parse(item) : initialValueRef.current);
       } catch (error) {
         Logger.warn(`Error syncing localStorage key "${key}":`, error);
       }
@@ -38,7 +51,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       window.removeEventListener("local-storage", handleStorageChange);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [key, initialValue]);
+  }, [key]);
 
   return [storedValue, setValue];
 }
