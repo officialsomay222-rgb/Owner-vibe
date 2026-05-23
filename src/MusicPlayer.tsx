@@ -240,6 +240,8 @@ export const MusicPlayer = () => {
             <button
               onClick={() => setIsExpanded(false)}
               className="p-2 -ml-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label="Minimize player"
+              title="Minimize player"
             >
               <ChevronDown className="w-8 h-8" />
             </button>
@@ -247,6 +249,8 @@ export const MusicPlayer = () => {
             <button
               onClick={() => setShowMenu(true)}
               className="p-2 -mr-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
+              aria-label="More options"
+              title="More options"
             >
               <MoreVertical className="w-6 h-6" />
             </button>
@@ -283,6 +287,8 @@ export const MusicPlayer = () => {
                   <button
                     onClick={handleToggleFavorite}
                     className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
+                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                   >
                     <Heart
                       className={`w-7 h-7 landscape:w-6 landscape:h-6 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
@@ -299,6 +305,8 @@ export const MusicPlayer = () => {
                     onClick={toggleShuffle}
                     className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                     style={{ color: isShuffle ? dominantColor : undefined }}
+                    aria-label="Toggle shuffle"
+                    title="Toggle shuffle"
                   >
                     <Shuffle className="w-6 h-6 landscape:w-5 landscape:h-5" />
                   </button>
@@ -306,6 +314,8 @@ export const MusicPlayer = () => {
                   <button
                     onClick={playPrevious}
                     className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                    aria-label="Previous track"
+                    title="Previous track"
                   >
                     <SkipBack className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
                   </button>
@@ -315,6 +325,8 @@ export const MusicPlayer = () => {
                     disabled={isLoadingStream}
                     className={`p-5 landscape:p-4 rounded-full flex items-center justify-center transition-all shadow-xl ${isLoadingStream ? 'opacity-80' : 'active:scale-90'}`}
                     style={{ backgroundColor: dominantColor, color: '#fff' }}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                    title={isPlaying ? 'Pause' : 'Play'}
                   >
                     {isLoadingStream ? (
                        <div className="w-10 h-10 landscape:w-8 landscape:h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
@@ -328,6 +340,8 @@ export const MusicPlayer = () => {
                   <button
                     onClick={playNext}
                     className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
+                    aria-label="Next track"
+                    title="Next track"
                   >
                     <SkipForward className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
                   </button>
@@ -336,6 +350,8 @@ export const MusicPlayer = () => {
                     onClick={toggleRepeat}
                     className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                     style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
+                    aria-label="Toggle repeat"
+                    title="Toggle repeat"
                   >
                     <Repeat className="w-6 h-6 landscape:w-5 landscape:h-5" />
                   </button>
@@ -343,10 +359,10 @@ export const MusicPlayer = () => {
 
                 {/* Volume & Extras */}
                 <div className="flex items-center justify-between px-6 landscape:px-2 text-white/50">
-                    <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
+                    <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2" aria-label={isMuted ? 'Unmute' : 'Mute'} title={isMuted ? 'Unmute' : 'Mute'}>
                         {isMuted ? <VolumeX className="w-5 h-5 landscape:w-4 landscape:h-4" /> : <Volume2 className="w-5 h-5 landscape:w-4 landscape:h-4" />}
                     </button>
-                    <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
+                    <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2" aria-label="Share" title="Share">
                         <Share2 className="w-5 h-5 landscape:w-4 landscape:h-4" />
                     </button>
                 </div>
@@ -459,7 +475,7 @@ export const MusicPlayer = () => {
 
                     {/* Info Icon (Bottom Left) */}
                     <div className="flex px-4 pt-4 pb-2">
-                        <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/70">
+                        <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/70" aria-label="Cast to device" title="Cast to device">
                             <SmartphoneNfc className="w-5 h-5" />
                         </button>
                     </div>
