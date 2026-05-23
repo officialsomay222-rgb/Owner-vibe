@@ -34,13 +34,19 @@ export const MiniPlayer = () => {
         className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] inset-x-2 z-40 max-w-md mx-auto"
       >
         <div
-          onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-transform has-[.inner-btn:active]:scale-[0.98] has-[.inner-btn:focus-visible]:ring-2 has-[.inner-btn:focus-visible]:ring-[#00d2ff]"
         >
+          {/* Hidden button for expand action */}
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="inner-btn absolute inset-0 z-0 opacity-0 cursor-pointer"
+            aria-label={`Expand player for ${currentSong.title}`}
+          />
+
           {/* Progress Bar Line */}
           <MiniProgressBar duration={duration} audioRef={audioRef} />
 
-          <div className="flex items-center space-x-3 overflow-hidden">
+          <div className="flex items-center space-x-3 overflow-hidden z-10 pointer-events-none">
             <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
               <img
                 src={mediumResThumb}
@@ -58,7 +64,7 @@ export const MiniPlayer = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 shrink-0 pr-2">
+          <div className="flex items-center space-x-2 shrink-0 pr-2 z-10 pointer-events-auto">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -67,6 +73,8 @@ export const MiniPlayer = () => {
                 }
               }}
               disabled={isLoadingStream}
+              aria-label={isLoadingStream ? 'Loading' : isPlaying ? 'Pause' : 'Play'}
+              title={isLoadingStream ? 'Loading' : isPlaying ? 'Pause' : 'Play'}
               className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
               {isLoadingStream ? (
@@ -82,6 +90,8 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
+              aria-label="Skip to next track"
+              title="Next Track"
               className="p-2 text-white hover:text-white/80 transition-colors"
             >
               <SkipForward className="w-6 h-6 fill-current" />
