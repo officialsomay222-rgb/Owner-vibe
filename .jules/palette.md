@@ -1,0 +1,3 @@
+## 2024-05-24 - Interactive Container Patterns
+**Learning:** Adding keyboard accessibility to complex interactive containers (like the MiniPlayer) can create "dead zones" if pointer events aren't carefully managed. Using a background `<button>` layer and `pointer-events-none` on the content wrapper requires ensuring non-interactive child elements (like album art) don't accidentally capture pointer events, which would prevent the background button from receiving clicks.
+**Action:** When implementing hidden background buttons for accessibility, always verify that all non-interactive children within the `pointer-events-none` wrapper do NOT have `pointer-events-auto` applied, or they will block clicks from reaching the underlying action target.
