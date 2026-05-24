@@ -1,0 +1,3 @@
+## 2024-05-24 - [Add ARIA labels to playback controls]
+**Learning:** Icon-only buttons within core playback components (MiniPlayer, MusicPlayer) lacked `aria-label`s, rendering them completely inaccessible to screen readers because they rely entirely on visual SVG icons (e.g., Lucide React icons). Dynamic state mapping for `aria-label` attributes (e.g., `isPlaying ? "Pause" : "Play"`, `isMuted ? "Unmute" : "Mute"`) is critical for interactive controls.
+**Action:** Always verify that every `<button>` enclosing only an `<svg>` or icon component includes a clear, context-aware `aria-label` attribute during initial component construction to ensure base accessibility standards are met.
