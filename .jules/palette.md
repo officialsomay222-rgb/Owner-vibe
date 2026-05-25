@@ -1,0 +1,4 @@
+
+## 2024-05-25 - Accessible Interactive Containers
+**Learning:** Interactive `div` containers with nested interactive child buttons (e.g. Play/Pause inside a clickable track row) create an accessibility anti-pattern. Nested interactive elements prevent proper screen reader focus and create conflict when using standard `onClick` on a parent wrapper.
+**Action:** Use a non-interactive parent container holding a visually hidden (`opacity-0 absolute inset-0 z-0`) `<button>` that handles the container's primary action (like expanding a player or opening a link). Position this behind nested controls and use `pointer-events-none` on inner structure wrappers, reserving `pointer-events-auto z-10` strictly for the internal nested buttons. Maintain visual feedback using the `:has()` CSS pseudo-class on the parent based on the hidden button's state (e.g., `has-[.expand-btn:active]:scale-[0.98]`).
