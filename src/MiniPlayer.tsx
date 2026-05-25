@@ -35,7 +35,16 @@ export const MiniPlayer = () => {
       >
         <div
           onClick={() => setIsExpanded(true)}
-          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsExpanded(true);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Expand player, currently playing ${currentSong.title} by ${currentSong.artist}`}
+          className="relative overflow-hidden bg-[#1a1a1a]/90 backdrop-blur-xl transform-gpu will-change-transform border border-white/5 rounded-xl p-2 flex items-center justify-between cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.4)] active:scale-[0.98] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           {/* Progress Bar Line */}
           <MiniProgressBar duration={duration} audioRef={audioRef} />
@@ -67,6 +76,7 @@ export const MiniPlayer = () => {
                 }
               }}
               disabled={isLoadingStream}
+              aria-label={isLoadingStream ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'}
               className={`p-2 transition-colors ${isLoadingStream ? 'text-white/50 cursor-not-allowed' : 'text-white hover:text-white/80'}`}
             >
               {isLoadingStream ? (
@@ -82,6 +92,7 @@ export const MiniPlayer = () => {
                 e.stopPropagation();
                 playNext();
               }}
+              aria-label="Next track"
               className="p-2 text-white hover:text-white/80 transition-colors"
             >
               <SkipForward className="w-6 h-6 fill-current" />
