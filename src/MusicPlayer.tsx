@@ -239,6 +239,7 @@ export const MusicPlayer = () => {
           <div className="relative w-full flex items-center justify-between px-6 pt-safe pb-4 mt-4 landscape:mb-0 landscape:pb-0 z-10">
             <button
               onClick={() => setIsExpanded(false)}
+              aria-label="Collapse player"
               className="p-2 -ml-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
             >
               <ChevronDown className="w-8 h-8" />
@@ -246,6 +247,7 @@ export const MusicPlayer = () => {
             <span className="text-sm font-medium tracking-widest text-white/80">NOW PLAYING</span>
             <button
               onClick={() => setShowMenu(true)}
+              aria-label="More options"
               className="p-2 -mr-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors"
             >
               <MoreVertical className="w-6 h-6" />
@@ -282,6 +284,7 @@ export const MusicPlayer = () => {
                   </div>
                   <button
                     onClick={handleToggleFavorite}
+                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                     className="p-3 ml-4 rounded-full hover:bg-white/10 transition-colors active:scale-90"
                   >
                     <Heart
@@ -297,6 +300,7 @@ export const MusicPlayer = () => {
                 <div className="flex items-center justify-between mb-8 landscape:mb-4 px-2 landscape:px-0">
                   <button
                     onClick={toggleShuffle}
+                    aria-label={isShuffle ? 'Disable shuffle' : 'Enable shuffle'}
                     className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${isShuffle ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                     style={{ color: isShuffle ? dominantColor : undefined }}
                   >
@@ -305,6 +309,7 @@ export const MusicPlayer = () => {
 
                   <button
                     onClick={playPrevious}
+                    aria-label="Play previous"
                     className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
                   >
                     <SkipBack className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
@@ -313,6 +318,7 @@ export const MusicPlayer = () => {
                   <button
                     onClick={togglePlayPause}
                     disabled={isLoadingStream}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
                     className={`p-5 landscape:p-4 rounded-full flex items-center justify-center transition-all shadow-xl ${isLoadingStream ? 'opacity-80' : 'active:scale-90'}`}
                     style={{ backgroundColor: dominantColor, color: '#fff' }}
                   >
@@ -327,6 +333,7 @@ export const MusicPlayer = () => {
 
                   <button
                     onClick={playNext}
+                    aria-label="Play next"
                     className="p-3 landscape:p-2 rounded-full hover:bg-white/10 transition-all active:scale-90 text-white"
                   >
                     <SkipForward className="w-10 h-10 landscape:w-8 landscape:h-8 fill-current" />
@@ -334,6 +341,7 @@ export const MusicPlayer = () => {
 
                   <button
                     onClick={toggleRepeat}
+                    aria-label={repeatMode === 'one' ? 'Disable repeat' : repeatMode === 'all' ? 'Repeat one' : 'Repeat all'}
                     className={`p-3 landscape:p-2 rounded-full transition-all active:scale-90 ${repeatMode !== 'none' ? `text-[${dominantColor}]` : 'text-white/50 hover:text-white/80'}`}
                     style={{ color: repeatMode !== 'none' ? dominantColor : undefined }}
                   >
@@ -343,10 +351,10 @@ export const MusicPlayer = () => {
 
                 {/* Volume & Extras */}
                 <div className="flex items-center justify-between px-6 landscape:px-2 text-white/50">
-                    <button onClick={toggleMute} className="hover:text-white transition-colors active:scale-90 p-2">
+                    <button onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} className="hover:text-white transition-colors active:scale-90 p-2">
                         {isMuted ? <VolumeX className="w-5 h-5 landscape:w-4 landscape:h-4" /> : <Volume2 className="w-5 h-5 landscape:w-4 landscape:h-4" />}
                     </button>
-                    <button onClick={handleShare} className="hover:text-white transition-colors active:scale-90 p-2">
+                    <button onClick={handleShare} aria-label="Share" className="hover:text-white transition-colors active:scale-90 p-2">
                         <Share2 className="w-5 h-5 landscape:w-4 landscape:h-4" />
                     </button>
                 </div>
@@ -459,7 +467,7 @@ export const MusicPlayer = () => {
 
                     {/* Info Icon (Bottom Left) */}
                     <div className="flex px-4 pt-4 pb-2">
-                        <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/70">
+                        <button aria-label="Song information" className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/70">
                             <SmartphoneNfc className="w-5 h-5" />
                         </button>
                     </div>
