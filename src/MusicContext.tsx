@@ -472,33 +472,43 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Memoize the context value to prevent unnecessary re-renders of consuming components
+  // when unrelated state changes (e.g. isPlaylistModalOpen).
+  const contextValue = React.useMemo(() => ({
+    currentSong,
+    queue,
+    isPlaying,
+    isLoadingStream,
+    duration,
+    isExpanded,
+    playSong,
+    togglePlayPause,
+    playNext,
+    playPrevious,
+    seekTo,
+    setIsExpanded,
+    isShuffle,
+    repeatMode,
+    toggleShuffle,
+    toggleRepeat,
+    audioRef,
+    playHistory,
+    favorites,
+    toggleFavorite,
+    addToQueue,
+    addToPlaylist,
+    showPlaylistModal,
+    customPlaylists
+  }), [
+    currentSong, queue, isPlaying, isLoadingStream, duration, isExpanded,
+    playSong, togglePlayPause, playNext, playPrevious, seekTo, setIsExpanded,
+    isShuffle, repeatMode, toggleShuffle, toggleRepeat, audioRef,
+    playHistory, favorites, toggleFavorite, addToQueue, addToPlaylist,
+    showPlaylistModal, customPlaylists
+  ]);
+
   return (
-    <MusicContext.Provider value={{
-      currentSong,
-      queue,
-      isPlaying,
-      isLoadingStream,
-      duration,
-      isExpanded,
-      playSong,
-      togglePlayPause,
-      playNext,
-      playPrevious,
-      seekTo,
-      setIsExpanded,
-      isShuffle,
-      repeatMode,
-      toggleShuffle,
-      toggleRepeat,
-      audioRef,
-      playHistory,
-      favorites,
-      toggleFavorite,
-      addToQueue,
-      addToPlaylist,
-      showPlaylistModal,
-      customPlaylists
-    }}>
+    <MusicContext.Provider value={contextValue}>
       {children}
 
       {/* Playlist Selector Modal */}
