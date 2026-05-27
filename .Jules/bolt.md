@@ -1,0 +1,3 @@
+## 2026-05-27 - [Optimize useLocalStorage Event Propagation]
+**Learning:** In a heavily localized React application, broadcasting plain `Event` objects for custom hook synchronization (e.g. `useLocalStorage` calling `new Event("local-storage")`) can cause a massive re-render storm. Every component utilizing the hook parses the storage and re-renders, regardless of whether their specific key changed.
+**Action:** Use `CustomEvent` and dispatch a detail payload with the mutated key (`new CustomEvent("local-storage", { detail: { key } })`). Always filter incoming events in the `useEffect` listener by explicitly comparing the event key against the hook's key to selectively ignore irrelevant updates, preserving application performance and reducing garbage collection pauses.
